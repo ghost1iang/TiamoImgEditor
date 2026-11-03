@@ -22,8 +22,6 @@ import {
   FlipVertical2,
   RotateCw,
   Compass,
-  Download,
-  Upload,
   Settings,
   Sparkles
 } from 'lucide-react';
@@ -58,8 +56,6 @@ const TOOL_ICONS: Record<ToolbarToolId, React.ReactNode> = {
   rotateCcw: <RotateCcw size={13} />,
   rotateCw: <RotateCw size={13} />,
   rotateAny: <Compass size={13} />,
-  download: <Download size={13} />,
-  upload: <Upload size={13} />,
   settings: <Settings size={13} />,
 };
 
@@ -91,8 +87,8 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   const applyRecommended = () => {
     onSetTools([
       'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 
-      'download', 'settings'
+      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny',
+      'settings'
     ]);
   };
 
@@ -100,7 +96,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   const applyCutoutOnly = () => {
     onSetTools([
       'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase', 
-      'crop', 'download', 'settings'
+      'crop', 'settings'
     ]);
   };
 
@@ -227,7 +223,6 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
               <div className="grid grid-cols-2 gap-1.5">
                 {categoryTools.map((tool) => {
                   const isChecked = visibleTools.has(tool.id);
-                  const isSettingsTool = tool.id === 'settings';
 
                   return (
                     <button

@@ -30,8 +30,6 @@ export type ToolbarToolId =
   | 'rotateCw'      // 顺时针90°
   | 'rotateAny'     // 自由旋转
   // 辅助与系统
-  | 'download'      // 保存下载
-  | 'upload'        // 重新上传
   | 'settings';     // 工具栏设置
 
 export type ToolbarCategoryKey = 'selection' | 'cutout' | 'color' | 'action' | 'transform' | 'system';
@@ -49,7 +47,7 @@ export const TOOLBAR_CATEGORIES: ToolbarCategoryDef[] = [
   { key: 'color', name: '色彩吸管', desc: '目标着色色卡与屏幕像素吸管' },
   { key: 'action', name: '剪裁与擦除', desc: '按选区裁切画布、擦除选区内容为透明与选区着色' },
   { key: 'transform', name: '旋转镜像', desc: '水平垂直翻转、正负90°旋转与自由角度校平' },
-  { key: 'system', name: '辅助功能', desc: '图片本地保存、重新上传与工具栏按钮设置' },
+  { key: 'system', name: '辅助功能', desc: '工具栏按钮显示自定义设置' },
 ];
 
 export interface ToolbarToolDef {
@@ -94,8 +92,6 @@ export const ALL_TOOLBAR_TOOLS: ToolbarToolDef[] = [
   { id: 'rotateAny', name: '自由旋转', shortName: '任意角度', category: 'transform', description: '无级滑动、打字输入与微调步进自由角度旋转', defaultVisible: true },
 
   // 6. 通用与系统
-  { id: 'download', name: '保存下载', shortName: '下载', category: 'system', description: '直接将当前编辑图像保存下载至本地', defaultVisible: true },
-  { id: 'upload', name: '重新上传', shortName: '上传', category: 'system', description: '重新从本地选择图片或导入 PDF 文件', defaultVisible: true },
   { id: 'settings', name: '工具栏设置', shortName: '设置', category: 'system', description: '自适应浮窗勾选自定义工具栏按钮显示', defaultVisible: true },
 ];
 

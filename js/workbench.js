@@ -1,9 +1,6 @@
     // ----------------------------------------------------
-    // 1. 内置默认高品质测试素材 (矢量风景插画，供测试魔棒抠图与选区)
+    // 1. 全局日志与提示工具
     // ----------------------------------------------------
-    const DEFAULT_SAMPLE_IMAGE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500' viewBox='0 0 800 500'><defs><linearGradient id='sky' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%23e0f2fe'/><stop offset='100%' stop-color='%23bae6fd'/></linearGradient><linearGradient id='lake' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%2338bdf8'/><stop offset='100%' stop-color='%230284c7'/></linearGradient></defs><rect width='800' height='500' fill='url(%23sky)'/><circle cx='620' cy='140' r='55' fill='%23fbbf24'/><polygon points='160,110 320,340 0,340' fill='%2394a3b8'/><polygon points='380,150 560,340 200,340' fill='%2364748b'/><polygon points='260,200 440,360 80,360' fill='%23475569'/><polygon points='540,180 720,350 360,350' fill='%23334155'/><rect x='0' y='340' width='800' height='160' fill='url(%23lake)'/><polygon points='680,260 720,350 640,350' fill='%23047857'/><polygon points='690,290 735,360 645,360' fill='%23065f46'/><polygon points='100,280 135,355 65,355' fill='%23047857'/></svg>";
-
-    // 全局日志记录
     const modalLogTerminal = document.getElementById('modal-log-terminal');
     function addLog(tag, msg, isSuccess = false, isWarn = false) {
       if (!modalLogTerminal) return;
@@ -112,8 +109,9 @@
           sourceImg,
           {
             useShadowDOM: false,
-            showComplete: true,
+            showComplete: false,
             showCancel: false,
+            visibleTools: getSavedVisibleTools(),
             rejectOnCancel: false,
             onComplete: (res) => {
               downloadResult(res);
@@ -146,25 +144,57 @@
     }
 
     // ----------------------------------------------------
-    // 3. 顶栏主动作事件监听
+    // 3. 顶栏主动作事件监听 (打开本地、保存到本地、清空画布)
     // ----------------------------------------------------
-    // 载入示例素材
-    document.getElementById('btn-load-sample').addEventListener('click', () => {
-      mountMainWorkspace(DEFAULT_SAMPLE_IMAGE);
-      showToast('已载入精选示例素材！');
-      addLog('[主工作区]', '重新载入内置示例图片');
+    function safeOn(idOrEl, event, handler) {
+      const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+      if (el) el.addEventListener(event, handler);
+    }
+
+    // 保存当前图片到本地
+    safeOn('btn-save-image', 'click', async () => {
+      const activeCore = window.__TIAMO_ACTIVE_CORE__;
+      const targetImg = (activeCore && activeCore.currentImage) ? activeCore.currentImage : currentMainImage;
+      if (!targetImg) {
+        showToast('当前画布无图片可保存，请先打开图片！');
+        return;
+      }
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const d = new Date();
+      const timestamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+      const filename = `tiamo-image-${timestamp}.png`;
+
+      try {
+        if (navigator.share && navigator.canShare && typeof targetImg === 'string' && targetImg.startsWith('data:image')) {
+          const res = await fetch(targetImg);
+          const blob = await res.blob();
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: filename });
+            showToast('已调起系统分享与保存！');
+            addLog('[主工作区: 导出]', `已调起系统分享: ${filename}`, true);
+            return;
+          }
+        }
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+
+      downloadResult(targetImg, filename);
+      showToast('已成功保存当前图片到本地！');
+      addLog('[主工作区: 导出]', `已导出图片到本地: ${filename}`, true);
     });
 
     // 清空画布
-    document.getElementById('btn-clear-canvas').addEventListener('click', () => {
+    safeOn('btn-clear-canvas', 'click', () => {
       mountMainWorkspace(null);
       showToast('已清空画布，可拖入或粘贴新图片！');
       addLog('[主工作区]', '已重置为空白画布状态');
     });
 
     // 打开本地图片
-    const mainFileInput = document.getElementById('main-file-input');
-    mainFileInput.addEventListener('change', (e) => {
+    safeOn('main-file-input', 'change', (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -198,43 +228,31 @@
       }
     });
 
-    // 强制刷新
-    document.getElementById('btn-force-refresh').addEventListener('click', () => {
-      try {
-        sessionStorage.clear();
-        localStorage.clear();
-        if ('caches' in window) {
-          caches.keys().then(names => names.forEach(n => caches.delete(n)));
-        }
-      } catch (_) {}
-      window.location.reload();
-    });
-
     // ----------------------------------------------------
     // 4. 获取 SDK 模态弹窗系统交互
     // ----------------------------------------------------
     const sdkModal = document.getElementById('sdk-modal-overlay');
-    const btnOpenSdkModal = document.getElementById('btn-open-sdk-modal');
-    const btnCloseSdkModal = document.getElementById('btn-close-sdk-modal');
 
-    btnOpenSdkModal.addEventListener('click', () => {
-      sdkModal.classList.add('active');
+    safeOn('btn-open-sdk-modal', 'click', () => {
+      if (sdkModal) sdkModal.classList.add('active');
       addLog('[开发者中心]', '打开 SDK 获取与演示中心');
       generateVisibleToolsCode();
     });
 
-    btnCloseSdkModal.addEventListener('click', () => {
-      sdkModal.classList.remove('active');
+    safeOn('btn-close-sdk-modal', 'click', () => {
+      if (sdkModal) sdkModal.classList.remove('active');
     });
 
-    sdkModal.addEventListener('click', (e) => {
-      if (e.target === sdkModal) {
-        sdkModal.classList.remove('active');
-      }
-    });
+    if (sdkModal) {
+      sdkModal.addEventListener('click', (e) => {
+        if (e.target === sdkModal) {
+          sdkModal.classList.remove('active');
+        }
+      });
+    }
 
     // 复制引入代码
-    document.getElementById('btn-copy-script-tag').addEventListener('click', async () => {
+    safeOn('btn-copy-script-tag', 'click', async () => {
       const scriptCode = '<script src="./libs/tiamo-image-editor.umd.js"><\/script>\n<script>\n  // 单行唤起原生图片编辑\n  TiamoImageEditor.edit(document.querySelector("#my-image"));\n<\/script>';
       const ok = await copyText(scriptCode);
       if (ok) showToast('已成功复制 SDK 引入代码！');
@@ -256,7 +274,7 @@
     // 5. 弹窗内的三大模式演示测试
     // ----------------------------------------------------
     // 模式一：带图弹窗
-    document.getElementById('btn-demo-modal').addEventListener('click', async () => {
+    safeOn('btn-demo-modal', 'click', async () => {
       const editor = getEditor();
       if (!editor) return;
       const targetImg = document.getElementById('demo-modal-img');
@@ -278,7 +296,7 @@
     });
 
     // 模式一：空白弹窗
-    document.getElementById('btn-demo-modal-empty').addEventListener('click', async () => {
+    safeOn('btn-demo-modal-empty', 'click', async () => {
       const editor = getEditor();
       if (!editor) return;
       addLog('[模式一: 空白]', '打开空白模态弹窗...');
@@ -286,7 +304,7 @@
         const res = await editor.modal(null, { rejectOnCancel: false });
         if (res) {
           const img = document.getElementById('demo-modal-img');
-          img.src = res instanceof Blob ? URL.createObjectURL(res) : res;
+          if (img) img.src = res instanceof Blob ? URL.createObjectURL(res) : res;
           addLog('[模式一: 完成]', '新导入/编辑的图片已更新至卡片预览！', true);
           showToast('空白弹窗导入完成！');
         }
@@ -297,11 +315,11 @@
 
     // 模式二：原地吸附
     const demoInplaceImg = document.getElementById('demo-inplace-img');
-    const originalDemoInplaceSrc = demoInplaceImg.src;
+    const originalDemoInplaceSrc = demoInplaceImg ? demoInplaceImg.src : '';
 
-    document.getElementById('btn-demo-inplace').addEventListener('click', async () => {
+    safeOn('btn-demo-inplace', 'click', async () => {
       const editor = getEditor();
-      if (!editor) return;
+      if (!editor || !demoInplaceImg) return;
       addLog('[模式二: 原地]', '弹出原地浮动工具栏修图...');
       try {
         const res = await editor.toolbar(demoInplaceImg, {
@@ -317,13 +335,15 @@
       }
     });
 
-    document.getElementById('btn-demo-inplace-reset').addEventListener('click', () => {
-      demoInplaceImg.src = originalDemoInplaceSrc;
+    safeOn('btn-demo-inplace-reset', 'click', () => {
+      if (demoInplaceImg && originalDemoInplaceSrc) {
+        demoInplaceImg.src = originalDemoInplaceSrc;
+      }
       addLog('[模式二: 重置]', '已还原模式二原图');
     });
 
     // 模式三：分布式测试槽位
-    document.getElementById('btn-demo-dist-mount').addEventListener('click', async () => {
+    safeOn('btn-demo-dist-mount', 'click', async () => {
       const editor = getEditor();
       if (!editor) return;
       addLog('[模式三: 分布式]', '正在挂载至测试槽位...');
@@ -331,7 +351,7 @@
         await editor.distributed(
           '#demo-slot-toolbar',
           '#demo-slot-canvas',
-          demoInplaceImg.src,
+          demoInplaceImg ? demoInplaceImg.src : null,
           {
             useShadowDOM: false,
             showComplete: true,
@@ -348,7 +368,7 @@
       }
     });
 
-    document.getElementById('btn-demo-dist-unmount').addEventListener('click', () => {
+    safeOn('btn-demo-dist-unmount', 'click', () => {
       const tb = document.getElementById('demo-slot-toolbar');
       const cv = document.getElementById('demo-slot-canvas');
       if (tb) tb.innerHTML = '[宿主工具栏槽位 #demo-slot-toolbar]';
@@ -357,34 +377,56 @@
     });
 
     // ----------------------------------------------------
-    // 6. 工具栏预设与代码生成器
+    // 6. 工具栏预设与导航栏右上角设置下拉交互
     // ----------------------------------------------------
     const ALL_TOOLS = [
       'rect', 'cropAuto', 'lasso', 'quad', 'invert', 'clear',
       'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase',
       'colorPicker', 'pipette', 'crop', 'fill', 'hd',
       'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny',
-      'download', 'upload', 'settings'
+      'settings'
     ];
     const RECOMMEND_TOOLS = [
       'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 
-      'download', 'settings'
+      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny',
+      'settings'
     ];
     const CUTOUT_TOOLS = [
       'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase', 
-      'crop', 'download', 'settings'
+      'crop', 'settings'
     ];
     const TRANSFORM_TOOLS = [
       'rect', 'cropAuto', 'quad', 'flipH', 'flipV', 'rotateCcw', 
       'rotateCw', 'rotateAny', 'settings'
     ];
 
-    function applyModalPresets(toolList) {
+    function getSavedVisibleTools() {
+      try {
+        const saved = localStorage.getItem('tiamo_active_toolbar_tools');
+        if (saved) {
+          const arr = JSON.parse(saved);
+          if (Array.isArray(arr) && arr.length > 0) return arr;
+        }
+      } catch (_) {}
+      return ALL_TOOLS;
+    }
+
+    function saveAndApplyTools(toolList) {
       const set = new Set(toolList);
+      document.querySelectorAll('.tsd-tool-cb').forEach(cb => {
+        cb.checked = set.has(cb.value);
+      });
       document.querySelectorAll('.modal-tool-cb').forEach(cb => {
         cb.checked = set.has(cb.value);
       });
+      const tsdBadge = document.getElementById('tsd-count-badge');
+      if (tsdBadge) {
+        tsdBadge.textContent = `已显示 ${toolList.length}/${ALL_TOOLS.length}`;
+      }
+      try {
+        localStorage.setItem('tiamo_active_toolbar_tools', JSON.stringify(toolList));
+      } catch (_) {}
+      window.dispatchEvent(new CustomEvent('tiamo-set-visible-tools', { detail: toolList }));
       generateVisibleToolsCode();
     }
 
@@ -397,17 +439,161 @@
       codeBox.textContent = codeStr;
     }
 
-    document.getElementById('modal-preset-all').addEventListener('click', () => applyModalPresets(ALL_TOOLS));
-    document.getElementById('modal-preset-recommend').addEventListener('click', () => applyModalPresets(RECOMMEND_TOOLS));
-    document.getElementById('modal-preset-cutout').addEventListener('click', () => applyModalPresets(CUTOUT_TOOLS));
-    document.getElementById('modal-preset-transform').addEventListener('click', () => applyModalPresets(TRANSFORM_TOOLS));
-    document.getElementById('modal-preset-clear').addEventListener('click', () => applyModalPresets(['settings']));
+    // ----------------------------------------------------
+    // 6. 导航栏系统设置与 SDK 接入配置 (如何使用 SDK)
+    // ----------------------------------------------------
+    const btnSystemSettings = document.getElementById('btn-system-settings');
+    const ssdDropdown = document.getElementById('system-settings-dropdown');
+
+    if (btnSystemSettings && ssdDropdown) {
+      btnSystemSettings.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = ssdDropdown.classList.contains('active');
+        if (isOpen) {
+          ssdDropdown.classList.remove('active');
+          btnSystemSettings.classList.remove('active');
+        } else {
+          ssdDropdown.classList.add('active');
+          btnSystemSettings.classList.add('active');
+        }
+      });
+
+      safeOn('btn-close-ssd', 'click', () => {
+        ssdDropdown.classList.remove('active');
+        btnSystemSettings.classList.remove('active');
+      });
+
+      window.addEventListener('click', (e) => {
+        if (!ssdDropdown.contains(e.target) && !btnSystemSettings.contains(e.target)) {
+          ssdDropdown.classList.remove('active');
+          btnSystemSettings.classList.remove('active');
+        }
+      });
+
+      // 模式切换单选
+      const modeRadios = document.querySelectorAll('input[name="ssd-mode"]');
+      modeRadios.forEach(r => {
+        r.addEventListener('change', () => {
+          document.querySelectorAll('.ssd-radio-card').forEach(card => card.classList.remove('active'));
+          const parent = r.closest('.ssd-radio-card');
+          if (parent) parent.classList.add('active');
+          try {
+            localStorage.setItem('tiamo_sdk_pref_mode', r.value);
+          } catch (_) {}
+        });
+      });
+
+      // 恢复模式选择
+      const savedMode = localStorage.getItem('tiamo_sdk_pref_mode');
+      if (savedMode) {
+        const targetRadio = document.querySelector(`input[name="ssd-mode"][value="${savedMode}"]`);
+        if (targetRadio) {
+          targetRadio.checked = true;
+          document.querySelectorAll('.ssd-radio-card').forEach(card => card.classList.remove('active'));
+          const parent = targetRadio.closest('.ssd-radio-card');
+          if (parent) parent.classList.add('active');
+        }
+      }
+
+      // 输出格式切换
+      const fmtRadios = document.querySelectorAll('input[name="ssd-format"]');
+      fmtRadios.forEach(r => {
+        r.addEventListener('change', () => {
+          document.querySelectorAll('.ssd-tag-radio').forEach(t => t.classList.remove('active'));
+          const parent = r.closest('.ssd-tag-radio');
+          if (parent) parent.classList.add('active');
+          try {
+            localStorage.setItem('tiamo_sdk_pref_format', r.value);
+          } catch (_) {}
+        });
+      });
+
+      // 恢复格式选择
+      const savedFormat = localStorage.getItem('tiamo_sdk_pref_format');
+      if (savedFormat) {
+        const targetFmt = document.querySelector(`input[name="ssd-format"][value="${savedFormat}"]`);
+        if (targetFmt) {
+          targetFmt.checked = true;
+          document.querySelectorAll('.ssd-tag-radio').forEach(t => t.classList.remove('active'));
+          const parent = targetFmt.closest('.ssd-tag-radio');
+          if (parent) parent.classList.add('active');
+        }
+      }
+
+      // Shadow DOM 开关
+      const shadowCb = document.getElementById('ssd-use-shadow');
+      if (shadowCb) {
+        shadowCb.checked = localStorage.getItem('tiamo_sdk_pref_shadow') === 'true';
+        shadowCb.addEventListener('change', () => {
+          try {
+            localStorage.setItem('tiamo_sdk_pref_shadow', shadowCb.checked ? 'true' : 'false');
+          } catch (_) {}
+        });
+      }
+
+      // Gemini API Key
+      const keyInput = document.getElementById('ssd-gemini-key');
+      if (keyInput) {
+        keyInput.value = localStorage.getItem('TIAMO_AI_API_KEY') || '';
+        keyInput.addEventListener('input', () => {
+          try {
+            localStorage.setItem('TIAMO_AI_API_KEY', keyInput.value.trim());
+          } catch (_) {}
+        });
+      }
+
+      // 切换 Key 明文/密文显示
+      safeOn('btn-ssd-toggle-key-visibility', 'click', () => {
+        if (!keyInput) return;
+        keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+      });
+
+      // 复制接入代码片段
+      safeOn('btn-ssd-copy-snippet', 'click', async () => {
+        const selectedMode = (document.querySelector('input[name="ssd-mode"]:checked') || {}).value || 'distributed';
+        const selectedFormat = (document.querySelector('input[name="ssd-format"]:checked') || {}).value || 'blob';
+        const useShadow = (document.getElementById('ssd-use-shadow') || {}).checked || false;
+
+        let snippet = '';
+        if (selectedMode === 'distributed') {
+          snippet = `// 分布式工作台挂载模式 (宿主自定义布局)\nconst result = await TiamoImageEditor.distributed(\n  '#your-toolbar-container',\n  '#your-canvas-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    onComplete: (res) => console.log('编辑完成:', res)\n  }\n);`;
+        } else if (selectedMode === 'modal') {
+          snippet = `// 全屏居中弹窗模式 (一键调起)\nconst result = await TiamoImageEditor.edit(imageSource, {\n  mode: 'modal',\n  outputType: '${selectedFormat}',\n  useShadowDOM: ${useShadow}\n});`;
+        } else {
+          snippet = `// 紧凑胶囊工具条模式 (悬浮胶囊)\nconst result = await TiamoImageEditor.toolbar(\n  '#your-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow}\n  }\n);`;
+        }
+
+        const ok = await copyText(snippet);
+        if (ok) showToast('已成功复制当前配置的 SDK 接入调用代码！');
+      });
+
+      // 打开接入中心
+      safeOn('btn-ssd-open-docs', 'click', () => {
+        ssdDropdown.classList.remove('active');
+        btnSystemSettings.classList.remove('active');
+        const modal = document.getElementById('modal-developer-center');
+        if (modal) {
+          modal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    }
+
+    // 开发者中心 Modal 内预设与复选框
+    safeOn('modal-preset-all', 'click', () => saveAndApplyTools(ALL_TOOLS));
+    safeOn('modal-preset-recommend', 'click', () => saveAndApplyTools(RECOMMEND_TOOLS));
+    safeOn('modal-preset-cutout', 'click', () => saveAndApplyTools(CUTOUT_TOOLS));
+    safeOn('modal-preset-transform', 'click', () => saveAndApplyTools(TRANSFORM_TOOLS));
+    safeOn('modal-preset-clear', 'click', () => saveAndApplyTools(['settings']));
 
     document.querySelectorAll('.modal-tool-cb').forEach(cb => {
-      cb.addEventListener('change', generateVisibleToolsCode);
+      cb.addEventListener('change', () => {
+        const checked = Array.from(document.querySelectorAll('.modal-tool-cb:checked')).map(c => c.value);
+        saveAndApplyTools(checked);
+      });
     });
 
-    document.getElementById('btn-copy-generated-code').addEventListener('click', async () => {
+    safeOn('btn-copy-generated-code', 'click', async () => {
       const codeBox = document.getElementById('generated-code-box');
       if (codeBox) {
         const ok = await copyText(codeBox.textContent);
@@ -416,14 +602,16 @@
     });
 
     // 复制发布指令
-    document.getElementById('btn-copy-publish-cmd').addEventListener('click', async () => {
+    safeOn('btn-copy-publish-cmd', 'click', async () => {
       const ok = await copyText('npm run publish:sdk');
       if (ok) showToast('已复制发布脚本指令：npm run publish:sdk');
     });
 
     // 清空日志
-    document.getElementById('btn-modal-clear-log').addEventListener('click', () => {
-      modalLogTerminal.innerHTML = '<div class="log-item"><span class="log-time">[' + new Date().toTimeString().split(' ')[0] + ']</span><span class="log-tag">[清空]</span><span class="log-msg">日志已清空</span></div>';
+    safeOn('btn-modal-clear-log', 'click', () => {
+      if (modalLogTerminal) {
+        modalLogTerminal.innerHTML = '<div class="log-item"><span class="log-time">[' + new Date().toTimeString().split(' ')[0] + ']</span><span class="log-tag">[清空]</span><span class="log-msg">日志已清空</span></div>';
+      }
     });
 
     // ----------------------------------------------------
@@ -431,6 +619,7 @@
     // ----------------------------------------------------
     function initApp() {
       syncVersionUI();
+      saveAndApplyTools(getSavedVisibleTools());
       mountMainWorkspace(null);
     }
 

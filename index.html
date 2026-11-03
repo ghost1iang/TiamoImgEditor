@@ -78,13 +78,9 @@
     });
   </script>
 
-  <!-- 标准 Vite ESM 源码引入：本地 Vite 开发态秒级热更 -->
-  <script type="module" src="/src/index.ts"></script>
-
-  <!-- 离线/静态部署兼容与动态时间戳防缓存：
-       1. 运行时通过原生 HEAD 请求动态探测 ./dist/tiamo-image-editor.umd.js 的真实修改时间戳 (Last-Modified)；
-       2. 自动拼接动态时间戳防浏览器缓存，且 index.html 文件本身永远无需反复修改和上传；
-       3. 无论部署在群晖 NAS、Nginx 还是离线双击打开，均能无缝自动加载最新 SDK。 -->
+  <!-- 真实 SDK 产物加载与动态时间戳防缓存：
+       全平台 100% 通过 SDK 标准构建产物 ./dist/tiamo-image-editor.umd.js 驱动，
+       杜绝直接加载 TS 源码导致的假象与 MIME 异常，确保开箱即用。 -->
   <script>
     (function() {
       var scriptUrl = './dist/tiamo-image-editor.umd.js';
@@ -104,14 +100,7 @@
       } catch (e) {
         // file:// 离线或跨域时安全忽略
       }
-
-      var isViteDev = window.location.protocol.startsWith('http') && 
-                      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '0.0.0.0') && 
-                      (window.location.port === '5173' || window.location.port === '3000');
-
-      if (!isViteDev) {
-        document.write('<script src="' + scriptUrl + '"><\/script>');
-      }
+      document.write('<script src="' + scriptUrl + '"><\/script>');
     })();
   </script>
 
@@ -148,15 +137,8 @@
       </div>
     </div>
 
-    <!-- 中间快捷功能：载入示例、上传本地、清空画布 -->
+    <!-- 中间快捷功能：打开本地、保存本地、清空画布 -->
     <div class="topbar-center">
-      <button class="top-action-btn" id="btn-load-sample" title="载入内置精选测试图片">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-        </svg>
-        <span>载入示例素材</span>
-      </button>
-
       <label class="top-action-btn" title="选择本地图片文件打开">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -166,6 +148,15 @@
         <span>打开本地图片</span>
         <input type="file" id="main-file-input" accept="image/*,application/pdf" style="display:none;" />
       </label>
+
+      <button class="top-action-btn" id="btn-save-image" title="保存当前编辑后的图片到本地文件">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" x2="12" y1="15" y2="3"/>
+        </svg>
+        <span>保存到本地</span>
+      </button>
 
       <button class="top-action-btn" id="btn-clear-canvas" title="清空当前画布">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -195,14 +186,129 @@
         <span>获取 SDK</span>
       </button>
 
-      <button class="btn-icon-secondary" id="btn-force-refresh" title="强制清理本地缓存并刷新">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-          <path d="M3 3v5h5"/>
-          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-          <path d="M16 21h5v-5"/>
+      <!-- 导航栏右侧系统功能：设置“如何使用 SDK” -->
+      <button class="btn-icon-secondary" id="btn-system-settings" title="系统设置与 SDK 接入配置 (如何使用 SDK)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
         </svg>
       </button>
+
+      <!-- 系统设置下拉面板 (如何使用 SDK) -->
+      <div class="system-settings-dropdown" id="system-settings-dropdown">
+        <div class="ssd-header">
+          <div class="ssd-title-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <div>
+              <div class="ssd-title">SDK 接入与系统设置</div>
+              <div class="ssd-subtitle">配置如何在其他系统或当前宿主中接入 SDK</div>
+            </div>
+          </div>
+          <button class="ssd-close-btn" id="btn-close-ssd" title="关闭设置">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="ssd-body">
+          <!-- 1. 运行集成模式 -->
+          <div class="ssd-section">
+            <div class="ssd-section-label">SDK 挂载调用模式</div>
+            <div class="ssd-radio-group">
+              <label class="ssd-radio-card active" id="label-mode-distributed">
+                <input type="radio" name="ssd-mode" value="distributed" checked />
+                <div class="ssd-radio-content">
+                  <span class="ssd-radio-title">分布式挂载 (Distributed)</span>
+                  <span class="ssd-radio-desc">工具栏与画布独立挂载至指定槽位，高度自定义工作台</span>
+                </div>
+              </label>
+              <label class="ssd-radio-card" id="label-mode-modal">
+                <input type="radio" name="ssd-mode" value="modal" />
+                <div class="ssd-radio-content">
+                  <span class="ssd-radio-title">居中弹窗模式 (Modal)</span>
+                  <span class="ssd-radio-desc">一键调起全屏弹窗编辑，包含完整顶底栏，零容器心智负担</span>
+                </div>
+              </label>
+              <label class="ssd-radio-card" id="label-mode-toolbar">
+                <input type="radio" name="ssd-mode" value="toolbar" />
+                <div class="ssd-radio-content">
+                  <span class="ssd-radio-title">胶囊工具条模式 (Toolbar)</span>
+                  <span class="ssd-radio-desc">暗黑半透明悬浮胶囊工具条，适合嵌入在图片上方直接操作</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. 输出结果格式 -->
+          <div class="ssd-section">
+            <div class="ssd-section-label">输出结果格式 (Output Format)</div>
+            <div class="ssd-grid-3">
+              <label class="ssd-tag-radio active" id="label-fmt-blob">
+                <input type="radio" name="ssd-format" value="blob" checked />
+                <span>Blob (推荐)</span>
+              </label>
+              <label class="ssd-tag-radio" id="label-fmt-base64">
+                <input type="radio" name="ssd-format" value="base64" />
+                <span>Base64</span>
+              </label>
+              <label class="ssd-tag-radio" id="label-fmt-canvas">
+                <input type="radio" name="ssd-format" value="canvas" />
+                <span>Canvas</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 3. 沙箱隔离与运行时安全 -->
+          <div class="ssd-section">
+            <div class="ssd-section-label">沙箱隔离与环境安全</div>
+            <label class="ssd-switch-item">
+              <div class="ssd-switch-info">
+                <span class="ssd-switch-title">Shadow DOM 沙箱隔离</span>
+                <span class="ssd-switch-desc">启用 Shadow DOM 严格隔离 SDK 与宿主页面的 CSS 样式互不污染</span>
+              </div>
+              <input type="checkbox" id="ssd-use-shadow" />
+            </label>
+          </div>
+
+          <!-- 4. AI 智能算力密钥 -->
+          <div class="ssd-section">
+            <div class="ssd-section-label">AI 算力引擎密钥 (Gemini API Key)</div>
+            <div class="ssd-input-wrap">
+              <input type="password" id="ssd-gemini-key" class="ssd-input" placeholder="输入 Gemini API Key 激活云端 AI 扩图与高清修复" />
+              <button class="ssd-input-btn" id="btn-ssd-toggle-key-visibility" title="显示/隐藏密钥">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="ssd-hint">密钥仅持久化存储在您当前浏览器 localStorage 中，绝不泄露给任何第三方。</div>
+          </div>
+        </div>
+
+        <!-- 底部快捷操作 -->
+        <div class="ssd-footer">
+          <button class="ssd-btn-secondary" id="btn-ssd-copy-snippet" title="复制当前选择的集成代码片段">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </svg>
+            <span>复制代码片段</span>
+          </button>
+          <button class="ssd-btn-primary" id="btn-ssd-open-docs" title="打开完整 SDK 接入说明书">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+            <span>打开接入中心</span>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -441,8 +547,6 @@
               <!-- 分组 6 -->
               <div class="tools-group">
                 <div class="group-title">辅助功能</div>
-                <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="download" checked /><span>保存下载</span></label>
-                <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="upload" checked /><span>重新上传</span></label>
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="settings" checked /><span>工具栏设置</span></label>
               </div>
             </div>
@@ -491,8 +595,15 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- 工作台业务逻辑脚本 -->
+  <!-- 工作台业务逻辑脚本 (动态时间戳彻底穿透浏览器缓存) -->
   <!-- ======================================================== -->
-  <script type=module src=./js/workbench.js></script>
+  <script>
+    (function() {
+      var s = document.createElement('script');
+      s.type = 'module';
+      s.src = './js/workbench.js?v=' + Date.now();
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>

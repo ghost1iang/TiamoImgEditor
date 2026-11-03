@@ -15,11 +15,7 @@ import {
   FlipHorizontal2,
   FlipVertical2,
   Compass,
-  Check, 
   X, 
-  RefreshCw, 
-  Download, 
-  Upload, 
   Sparkles,
   Scissors,
   Wand2,
@@ -235,7 +231,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onCancel,
 }) => {
   const {
-    version,
     currentImage,
     activeTool,
     setActiveTool,
@@ -277,13 +272,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     handleInvertSelection,
     handleEraseSelection,
     applyWandCutout,
-    handleUpload,
     isLoading,
-    handleFinish,
     handleCancel: coreCancel,
   } = core;
 
-  const handleDoneClick = onFinish || handleFinish;
   const handleCancelClick = onCancel || coreCancel;
 
   const isCompact = mode === 'toolbar';
@@ -323,6 +315,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const handleSetTools = (toolIds: ToolbarToolId[]) => {
     setVisibleTools(new Set(toolIds));
   };
+
+  // 支持外部事件（如导航栏设置）全局动态更新可见工具与浮窗切换
+  useEffect(() => {
+    const handleSetVisibleToolsEvent = (e: any) => {
+      if (e && e.detail) {
+        const toolsList = Array.isArray(e.detail) ? e.detail : Array.from(e.detail);
+        setVisibleTools(new Set(toolsList as ToolbarToolId[]));
+      }
+    };
+    const handleToggleSettingsEvent = () => {
+      setShowSettingsPopover((p) => !p);
+    };
+
+    window.addEventListener('tiamo-set-visible-tools', handleSetVisibleToolsEvent as EventListener);
+    window.addEventListener('tiamo-toggle-toolbar-settings', handleToggleSettingsEvent as EventListener);
+    return () => {
+      window.removeEventListener('tiamo-set-visible-tools', handleSetVisibleToolsEvent as EventListener);
+      window.removeEventListener('tiamo-toggle-toolbar-settings', handleToggleSettingsEvent as EventListener);
+    };
+  }, []);
 
   // ----------------------------------------------------
   // 2. 旋转浮窗与设置浮窗定位控制
@@ -452,25 +464,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     visibleTools.has('rotateCw') || 
     visibleTools.has('rotateAny');
 
+  // 载入图片后，工具栏与其包含的全部SDK按钮（含工具栏设置）才一并出现
+  if (!currentImage) {
+    return null;
+  }
+
   return (
     <div ref={toolbarRef} className={`relative flex items-center justify-between ${isCompact ? 'p-1.5 bg-slate-900/90 text-white rounded-2xl shadow-2xl backdrop-blur-md border border-white/20' : 'h-10 px-2 bg-white/90 backdrop-blur-md border-b border-slate-200 z-30 shrink-0 text-slate-800'}`}>
-      {/* 标题 & Logo (弹窗与分布式模式显示) */}
-      {!isCompact && (
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-slate-900 flex items-center justify-center shadow-lg transform rotate-3 shrink-0 rounded-lg">
-            <Sparkles size={12} className="text-white" />
-          </div>
-          <div className="hidden sm:flex items-center gap-1.5 leading-none">
-            <h1 className="text-[11px] font-black text-slate-900 tracking-tight">AI编辑器</h1>
-            <span className="inline-block text-[8px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.5 rounded border border-emerald-300 shadow-sm leading-none">{version}</span>
-          </div>
-        </div>
-      )}
-
       {/* 核心编辑工具组 */}
-      <div className="flex items-center gap-1 mx-2 overflow-x-auto no-scrollbar max-w-[85%]">
-        {currentImage && (
-          <>
+      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1 mr-2">
+        <>
             {/* 1. 选区范围工具组 */}
             {hasSelectionTools && (
               <div className={`flex items-center p-0.5 border gap-0.5 shrink-0 rounded-lg shadow-inner ${isCompact ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
@@ -788,98 +791,41 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               </div>
             )}
           </>
-        )}
       </div>
 
-      {/* 右侧动作按钮组 (下载、上传、设置、完成与取消) */}
-      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-        {/* 本地下载 */}
-        {currentImage && visibleTools.has('download') && (
-          <button 
-            onClick={async () => {
-              const pad = (n: number) => String(n).padStart(2, '0');
-              const d = new Date();
-              const timestamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-              const filename = `tiamo-image-${timestamp}.png`;
+      {/* 右侧动作按钮组 (设置与取消) */}
+      {(visibleTools.has('settings') || showCancel) && (
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          {/* 工具栏设置按钮 (SDK内置工具) */}
+          {visibleTools.has('settings') && (
+            <button
+              ref={settingsBtnRef}
+              onClick={() => setShowSettingsPopover(p => !p)}
+              className={`p-1.5 rounded-lg shadow-sm transition-all ${
+                showSettingsPopover 
+                  ? 'bg-indigo-600 text-white shadow-md' 
+                  : isCompact 
+                    ? 'bg-slate-800 text-slate-300 hover:text-indigo-400 hover:bg-slate-700' 
+                    : 'bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50'
+              }`}
+              title="工具栏设置 (自定义哪些按钮显示或隐藏)"
+            >
+              <Settings size={14} />
+            </button>
+          )}
 
-              try {
-                if (navigator.share && navigator.canShare && currentImage.startsWith('data:image')) {
-                  const res = await fetch(currentImage);
-                  const blob = await res.blob();
-                  const file = new File([blob], filename, { type: 'image/png' });
-                  if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: filename });
-                    return;
-                  }
-                }
-              } catch (err: any) {
-                if (err && err.name === 'AbortError') return;
-              }
-
-              const a = document.createElement('a');
-              a.href = currentImage;
-              a.download = filename;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-            }} 
-            className={`p-1.5 rounded-lg shadow-sm transition-colors ${isCompact ? 'bg-slate-800 text-slate-300 hover:text-indigo-400' : 'bg-white border border-slate-200 text-slate-600 hover:text-indigo-600'}`} 
-            title="保存到本地"
-          >
-            <Download size={14} />
-          </button>
-        )}
-
-        {/* 重新上传 */}
-        {!isCompact && visibleTools.has('upload') && (
-          <label className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white cursor-pointer font-bold text-[10px] active:scale-95 shrink-0 shadow-md rounded-lg hover:bg-slate-800">
-            <Upload size={12} /> 
-            <span className="hidden sm:inline">重新上传</span>
-            <input type="file" accept="image/*,application/pdf" onChange={handleUpload} className="hidden" />
-          </label>
-        )}
-
-        {/* 工具栏设置按钮 (全新增加：点击弹开界面选择哪些按钮显示/隐藏) */}
-        {visibleTools.has('settings') && (
-          <button
-            ref={settingsBtnRef}
-            onClick={() => setShowSettingsPopover(p => !p)}
-            className={`p-1.5 rounded-lg shadow-sm transition-all ${
-              showSettingsPopover 
-                ? 'bg-indigo-600 text-white shadow-md' 
-                : isCompact 
-                  ? 'bg-slate-800 text-slate-300 hover:text-indigo-400 hover:bg-slate-700' 
-                  : 'bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50'
-            }`}
-            title="工具栏设置 (自定义哪些按钮显示或隐藏)"
-          >
-            <Settings size={14} />
-          </button>
-        )}
-
-        {/* SDK 完成返回原应用按钮 */}
-        {showComplete && currentImage && (
-          <button
-            onClick={handleDoneClick}
-            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] active:scale-95 shrink-0 shadow-md rounded-lg transition-all"
-            title="完成编辑并返回原应用"
-          >
-            <Check size={13} strokeWidth={3} />
-            <span>完成</span>
-          </button>
-        )}
-
-        {/* SDK 取消按钮 */}
-        {showCancel && (
-          <button
-            onClick={handleCancelClick}
-            className={`p-1.5 rounded-lg transition-colors ${isCompact ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-red-400' : 'bg-white hover:bg-red-50 border border-slate-200 text-slate-400 hover:text-red-500'}`}
-            title="取消并关闭"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
+          {/* SDK 取消按钮 */}
+          {showCancel && (
+            <button
+              onClick={handleCancelClick}
+              className={`p-1.5 rounded-lg transition-colors ${isCompact ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-red-400' : 'bg-white hover:bg-red-50 border border-slate-200 text-slate-400 hover:text-red-500'}`}
+              title="取消并关闭"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 任意角度旋转控制浮窗 */}
       {activeTool === 'rotate' && (

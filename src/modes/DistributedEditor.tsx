@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useImageEditorCore, CoreOptions } from '../core/useImageEditorCore';
 import { Toolbar } from '../components/Toolbar';
@@ -21,6 +21,17 @@ export interface DistributedEditorProps extends CoreOptions {
 export const DistributedEditor: React.FC<DistributedEditorProps> = (props) => {
   const { toolbarContainer, canvasContainer } = props;
   const core = useImageEditorCore(props);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__TIAMO_ACTIVE_CORE__ = core;
+    }
+    return () => {
+      if (typeof window !== 'undefined' && (window as any).__TIAMO_ACTIVE_CORE__ === core) {
+        delete (window as any).__TIAMO_ACTIVE_CORE__;
+      }
+    };
+  }, [core]);
 
   const resolvedToolbarNode = useMemo(() => {
     if (typeof toolbarContainer === 'string') {
@@ -48,8 +59,8 @@ export const DistributedEditor: React.FC<DistributedEditorProps> = (props) => {
 
   return (
     <>
-      {/* 挂载工具栏到指定槽位 */}
-      {createPortal(
+      {/* 挂载工具栏到指定槽位：仅在载入图片后渲染工具栏，无图时保持槽位绝对纯净 */}
+      {core.currentImage && createPortal(
         <div className="w-full font-sans select-none">
           <Toolbar 
             core={core} 
@@ -66,9 +77,9 @@ export const DistributedEditor: React.FC<DistributedEditorProps> = (props) => {
         resolvedToolbarNode
       )}
 
-      {/* 挂载画布到指定槽位 */}
+      {/* 挂载画布到指定槽位：去除圆角以完美平铺宿主容器，杜绝底层黑边漏色 */}
       {createPortal(
-        <div className="w-full h-full min-h-[300px] flex flex-col font-sans select-none bg-[#f1f5f9] rounded-xl overflow-hidden relative">
+        <div className="w-full h-full min-h-[300px] flex flex-col font-sans select-none bg-[#f8fafc] overflow-hidden relative">
           <CanvasWorkspace core={core} showZoomControls={true} className="w-full h-full" />
           <ConfirmModal core={core} />
         </div>,
