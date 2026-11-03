@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SDK_VERSION } from '../version';
+import { executeSparseHdReconstruction } from './algorithms/sparseHd';
+import { isInsideLockedRegion, processUniversalDeSpill } from './algorithms/wand';
+import { findNonTransparentBounds } from './algorithms/crop';
 
 export interface HistoryRecord {
   id: number;
@@ -337,23 +340,8 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     }
   }, [maskCanvas]);
 
-  const isInsideLockedRegion = (x: number, y: number, region: SelectionRegion | null) => {
-    if (!region) return true;
-    let inside = false;
-    if (region.type === 'rect') {
-      const r = region.data;
-      inside = x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
-    } else if (region.type === 'path') {
-      const path = region.data as Point[];
-      if (path.length < 3) return true;
-      for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
-        const xi = path[i].x, yi = path[i].y;
-        const xj = path[j].x, yj = path[j].y;
-        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-      }
-    }
-    return isRegionInverted ? !inside : inside;
+  const isInsideLockedRegionScoped = (x: number, y: number, region: SelectionRegion | null) => {
+    return isInsideLockedRegion(x, y, region, isRegionInverted);
   };
 
   const computeSelection = useCallback((startX: number, startY: number, currentTolerance: number, mode: 'global' | 'connected', region: SelectionRegion | null, isAdding: boolean) => {
@@ -384,12 +372,12 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     if (mode === 'global') {
       for (let i = 0; i < data.length; i += 4) {
         const x = (i / 4) % width, y = Math.floor((i / 4) / width);
-        if (isSimilar(i) && isInsideLockedRegion(x, y, region)) {
+        if (isSimilar(i) && isInsideLockedRegionScoped(x, y, region)) {
           mData[i] = 255; mData[i+1] = 255; mData[i+2] = 0; mData[i+3] = 180; hasSelected = true;
         }
       }
     } else {
-      if (!isInsideLockedRegion(startX, startY, region)) return;
+      if (!isInsideLockedRegionScoped(startX, startY, region)) return;
       const visited = new Uint8Array(width * height); const stack: [number, number][] = [[startX, startY]];
       visited[startY * width + startX] = 1;
       while (stack.length > 0) {
@@ -399,7 +387,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
         for (const [nx, ny] of neighbors) {
           if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
             const nIdx = ny * width + nx;
-            if (!visited[nIdx] && isSimilar(nIdx * 4) && isInsideLockedRegion(nx, ny, region)) {
+            if (!visited[nIdx] && isSimilar(nIdx * 4) && isInsideLockedRegionScoped(nx, ny, region)) {
               visited[nIdx] = 1; stack.push([nx, ny]);
             }
           }
@@ -906,100 +894,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
 
     setTimeout(() => {
       try {
-        let curCanvas = document.createElement('canvas');
-        curCanvas.width = origW;
-        curCanvas.height = origH;
-        const curCtx = curCanvas.getContext('2d')!;
-        curCtx.drawImage(img, 0, 0);
-
-        let curW = origW;
-        let curH = origH;
-
-        // 3.2 ~ 3.6 循环执行稀疏化与双向插值
-        while (true) {
-          // 3.2 & 3.3: 宽高各 x2
-          const nextW = curW * 2;
-          const nextH = curH * 2;
-
-          const srcCtx = curCanvas.getContext('2d')!;
-          const srcData = srcCtx.getImageData(0, 0, curW, curH).data;
-
-          const nextCanvas = document.createElement('canvas');
-          nextCanvas.width = nextW;
-          nextCanvas.height = nextH;
-          const nextCtx = nextCanvas.getContext('2d')!;
-          const nextImageData = nextCtx.createImageData(nextW, nextH);
-          const nextData = nextImageData.data;
-
-          // 放置原始像素，其余为空白像素
-          for (let y = 0; y < curH; y++) {
-            for (let x = 0; x < curW; x++) {
-              const sIdx = (y * curW + x) * 4;
-              const tIdx = ((y * 2) * nextW + (x * 2)) * 4;
-              nextData[tIdx] = srcData[sIdx];
-              nextData[tIdx + 1] = srcData[sIdx + 1];
-              nextData[tIdx + 2] = srcData[sIdx + 2];
-              nextData[tIdx + 3] = srcData[sIdx + 3];
-            }
-          }
-
-          // 3.4: 横向填充，用两个原始像素的平均值填充中间的空白像素
-          for (let y = 0; y < nextH; y += 2) {
-            for (let x = 0; x < nextW - 2; x += 2) {
-              const lIdx = (y * nextW + x) * 4;
-              const rIdx = (y * nextW + x + 2) * 4;
-              const mIdx = (y * nextW + x + 1) * 4;
-              for (let c = 0; c < 4; c++) {
-                nextData[mIdx + c] = Math.round((nextData[lIdx + c] + nextData[rIdx + c]) / 2);
-              }
-            }
-            // 边缘最后一列处理 (复制倒数第二列)
-            const lastPrev = (y * nextW + nextW - 2) * 4;
-            const last = (y * nextW + nextW - 1) * 4;
-            for (let c = 0; c < 4; c++) {
-              nextData[last + c] = nextData[lastPrev + c];
-            }
-          }
-
-          // 3.5: 纵向填充，用两个已有像素的平均值填充中间的空白像素
-          for (let x = 0; x < nextW; x++) {
-            for (let y = 0; y < nextH - 2; y += 2) {
-              const tIdx = (y * nextW + x) * 4;
-              const bIdx = ((y + 2) * nextW + x) * 4;
-              const mIdx = ((y + 1) * nextW + x) * 4;
-              for (let c = 0; c < 4; c++) {
-                nextData[mIdx + c] = Math.round((nextData[tIdx + c] + nextData[bIdx + c]) / 2);
-              }
-            }
-            // 边缘最后一行处理 (复制倒数第二行)
-            const lastPrev = ((nextH - 2) * nextW + x) * 4;
-            const last = ((nextH - 1) * nextW + x) * 4;
-            for (let c = 0; c < 4; c++) {
-              nextData[last + c] = nextData[lastPrev + c];
-            }
-          }
-
-          nextCtx.putImageData(nextImageData, 0, 0);
-          curCanvas = nextCanvas;
-          curW = nextW;
-          curH = nextH;
-
-          // 3.6: 是否 2W > W' 且 2H > H'
-          if (curW >= targetW && curH >= targetH) {
-            break;
-          }
-        }
-
-        // 3.7: 把生成的高清化结果缩小到 W' x H'
-        const finalCanvas = document.createElement('canvas');
-        finalCanvas.width = targetW;
-        finalCanvas.height = targetH;
-        const finalCtx = finalCanvas.getContext('2d')!;
-        finalCtx.imageSmoothingEnabled = true;
-        finalCtx.imageSmoothingQuality = 'high';
-        finalCtx.drawImage(curCanvas, 0, 0, targetW, targetH);
-
-        const newBase64 = finalCanvas.toDataURL('image/png');
+        const newBase64 = executeSparseHdReconstruction(img, origW, origH, targetW, targetH);
 
         // 计算物理显示尺寸与画布中心补正，确保高清化后严格在所拖拽的 HDBox 原始像素位置显示，画面不产生任何跳动与弹跳
         const ratio = targetW / origW;
@@ -1061,15 +956,14 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     if (!ctx) { setIsLoading(false); return; }
     ctx.beginPath(); ctx.moveTo(quadPoints[0].x, quadPoints[0].y);
     quadPoints.forEach((p, i) => i > 0 && ctx.lineTo(p.x, p.y)); ctx.closePath(); ctx.clip(); ctx.drawImage(img, 0, 0);
-    const pixels = ctx.getImageData(0, 0, nw, nh); const data = pixels.data;
-    let bound = { top: null as number | null, left: null as number | null, right: null as number | null, bottom: null as number | null };
-    for (let i = 0; i < data.length; i += 4) { if (data[i + 3] !== 0) { const x = (i / 4) % nw, y = Math.floor((i / 4) / nw); if (bound.top === null || y < bound.top) bound.top = y; if (bound.left === null || x < bound.left) bound.left = x; if (bound.right === null || x > bound.right) bound.right = x; if (bound.bottom === null || y > bound.bottom) bound.bottom = y; } }
-    if (bound.top !== null && bound.left !== null && bound.right !== null && bound.bottom !== null) {
-      const copy = document.createElement('canvas'); const tw = bound.right - bound.left + 1, th = bound.bottom - bound.top + 1;
-      copy.width = tw; copy.height = th; 
+    const pixels = ctx.getImageData(0, 0, nw, nh);
+    const bound = findNonTransparentBounds(pixels.data, nw, nh);
+    if (bound) {
+      const copy = document.createElement('canvas');
+      copy.width = bound.width; copy.height = bound.height; 
       const copyCtx = copy.getContext('2d');
       if (copyCtx) {
-        copyCtx.putImageData(ctx.getImageData(bound.left, bound.top, tw, th), 0, 0);
+        copyCtx.putImageData(ctx.getImageData(bound.left, bound.top, bound.width, bound.height), 0, 0);
         const res = copy.toDataURL(); const rec: HistoryRecord = { id: Date.now(), url: res, prompt: "顶点不规则剪裁", timestamp: new Date().toLocaleTimeString() };
         setHistory(prev => [rec, ...prev]); setCurrentImage(res); setActiveRecord(rec);
       }
@@ -1096,7 +990,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     } else if (selectionRegion) { 
       for (let y = 0; y < nh; y++) { 
         for (let x = 0; x < nw; x++) { 
-          if (isInsideLockedRegion(x, y, selectionRegion)) { 
+          if (isInsideLockedRegionScoped(x, y, selectionRegion)) { 
             const i = (y * nw + x) * 4; imgData[i] = r; imgData[i+1] = g; imgData[i+2] = b; imgData[i+3] = 255; 
           } 
         } 
@@ -1134,24 +1028,13 @@ export function useImageEditorCore(options: CoreOptions = {}) {
       ctx.drawImage(img, 0, 0);
 
       const pixels = ctx.getImageData(0, 0, nw, nh);
-      const data = pixels.data;
-      let bound = { top: null as number | null, left: null as number | null, right: null as number | null, bottom: null as number | null };
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i + 3] !== 0) {
-          const x = (i / 4) % nw, y = Math.floor((i / 4) / nw);
-          if (bound.top === null || y < bound.top) bound.top = y;
-          if (bound.left === null || x < bound.left) bound.left = x;
-          if (bound.right === null || x > bound.right) bound.right = x;
-          if (bound.bottom === null || y > bound.bottom) bound.bottom = y;
-        }
-      }
-      if (bound.top !== null && bound.left !== null && bound.right !== null && bound.bottom !== null) {
+      const bound = findNonTransparentBounds(pixels.data, nw, nh);
+      if (bound) {
         const copy = document.createElement('canvas');
-        const tw = bound.right - bound.left + 1, th = bound.bottom - bound.top + 1;
-        copy.width = tw; copy.height = th; 
+        copy.width = bound.width; copy.height = bound.height; 
         const copyCtx = copy.getContext('2d');
         if (copyCtx) {
-          copyCtx.putImageData(ctx.getImageData(bound.left, bound.top, tw, th), 0, 0);
+          copyCtx.putImageData(ctx.getImageData(bound.left, bound.top, bound.width, bound.height), 0, 0);
           const res = copy.toDataURL();
           const rec: HistoryRecord = { id: Date.now(), url: res, prompt: "按选区剪裁", timestamp: new Date().toLocaleTimeString() };
           setHistory(prev => [rec, ...prev]);
@@ -1207,12 +1090,11 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     const ctx = canvas.getContext('2d'); 
     if (!ctx) return;
     ctx.drawImage(img, 0, 0);
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height); const data = pixels.data;
-    let bound = { top: null as number | null, left: null as number | null, right: null as number | null, bottom: null as number | null };
-    for (let i = 0; i < data.length; i += 4) { if (data[i + 3] !== 0) { const x = (i / 4) % canvas.width, y = Math.floor((i / 4) / canvas.width); if (bound.top === null || y < bound.top) bound.top = y; if (bound.left === null || x < bound.left) bound.left = x; if (bound.right === null || x > bound.right) bound.right = x; if (bound.bottom === null || y > bound.bottom) bound.bottom = y; } }
-    if (bound.top !== null && bound.left !== null && bound.right !== null && bound.bottom !== null) {
-      const tw = bound.right - bound.left + 1, th = bound.bottom - bound.top + 1;
-      setSelectionRegion({ type: 'rect', data: { x: bound.left, y: bound.top, w: tw, h: th } }); setActiveTool('rect'); 
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const bound = findNonTransparentBounds(pixels.data, canvas.width, canvas.height);
+    if (bound) {
+      setSelectionRegion({ type: 'rect', data: { x: bound.left, y: bound.top, w: bound.width, h: bound.height } });
+      setActiveTool('rect'); 
     }
   };
 
@@ -1237,132 +1119,6 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     for (let i = 0; i < data.length; i += 4) { if (data[i + 3] > 0) data[i + 3] = 0; else { data[i]=255; data[i+1]=255; data[i+2]=0; data[i+3]=180; } }
     const newCanvas = document.createElement('canvas'); newCanvas.width = maskCanvas.width; newCanvas.height = maskCanvas.height;
     newCanvas.getContext('2d')?.putImageData(imageData, 0, 0); setMaskCanvas(newCanvas);
-  };
-
-  // 全色相智能去溢色算法 (Universal Chroma & Color De-Spill Filter)
-  // 完美支持：绿底 (Green)、蓝底 (Blue)、黄底 (Yellow)、红底 (Red)、青底 (Cyan)、品红 (Magenta) 及任意魔棒吸附背景色
-  const processUniversalDeSpill = (
-    data: Uint8ClampedArray,
-    bg: { r: number; g: number; b: number } | null,
-    tol: number
-  ): boolean => {
-    // 若未采样则默认按传统绿幕 (0, 255, 0)
-    const tr = bg ? bg.r : 0;
-    const tg = bg ? bg.g : 255;
-    const tb = bg ? bg.b : 0;
-
-    // 智能识别吸附颜色的色彩主导倾向
-    const isGreen = tg > tr * 1.15 && tg > tb * 1.15;
-    const isBlue = tb > tr * 1.15 && tb > tg * 1.15;
-    const isRed = tr > tg * 1.15 && tr > tb * 1.15;
-    const isYellow = tr > tb * 1.25 && tg > tb * 1.25 && Math.abs(tr - tg) < 70;
-    const isCyan = tg > tr * 1.25 && tb > tr * 1.25 && Math.abs(tg - tb) < 70;
-    const isMagenta = tr > tg * 1.25 && tb > tg * 1.25 && Math.abs(tr - tg) < 70;
-
-    const tolRange = Math.max(40, tol * 1.5);
-    const tolSq = tolRange * tolRange;
-    let modified = false;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const a = data[i + 3];
-      if (a === 0) continue;
-
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-
-      if (isGreen) {
-        // 绿幕经典算法：G_new = min(G, (R+B)/2)
-        if (g > r && g > b) {
-          const limit = (r + b) / 2;
-          if (g > limit) {
-            const excess = g - limit;
-            data[i + 1] = Math.round(limit);
-            data[i + 3] = Math.max(0, Math.min(255, Math.round(a - excess * 0.35)));
-            modified = true;
-          }
-        }
-      } else if (isBlue) {
-        // 蓝幕经典算法：B_new = min(B, (R+G)/2)
-        if (b > r && b > g) {
-          const limit = (r + g) / 2;
-          if (b > limit) {
-            const excess = b - limit;
-            data[i + 2] = Math.round(limit);
-            data[i + 3] = Math.max(0, Math.min(255, Math.round(a - excess * 0.35)));
-            modified = true;
-          }
-        }
-      } else if (isRed) {
-        // 红幕经典算法：R_new = min(R, (G+B)/2)
-        if (r > g && r > b) {
-          const limit = (g + b) / 2;
-          if (r > limit) {
-            const excess = r - limit;
-            data[i] = Math.round(limit);
-            data[i + 3] = Math.max(0, Math.min(255, Math.round(a - excess * 0.35)));
-            modified = true;
-          }
-        }
-      } else if (isYellow) {
-        // 黄幕算法：黄色是红+绿高而蓝低，压制 R 和 G 突出分量，平滑边缘发黄
-        if (r > b && g > b) {
-          const excess = Math.min(r - b, g - b);
-          if (excess > 12) {
-            const damp = excess * 0.55;
-            data[i] = Math.round(r - damp);
-            data[i + 1] = Math.round(g - damp);
-            data[i + 2] = Math.min(255, Math.round(b + damp * 0.3));
-            data[i + 3] = Math.max(0, Math.min(255, Math.round(a - excess * 0.25)));
-            modified = true;
-          }
-        }
-      } else if (isCyan) {
-        // 青幕算法：绿+蓝高而红低
-        if (g > r && b > r) {
-          const excess = Math.min(g - r, b - r);
-          if (excess > 12) {
-            const damp = excess * 0.55;
-            data[i + 1] = Math.round(g - damp);
-            data[i + 2] = Math.round(b - damp);
-            data[i] = Math.min(255, Math.round(r + damp * 0.3));
-            data[i + 3] = Math.max(0, Math.min(255, Math.round(a - excess * 0.25)));
-            modified = true;
-          }
-        }
-      } else if (isMagenta) {
-        // 品红算法：红+蓝高而绿低
-        if (r > g && b > g) {
-          const excess = Math.min(r - g, b - g);
-          if (excess > 12) {
-            const damp = excess * 0.55;
-            data[i] = Math.round(r - damp);
-            data[i + 2] = Math.round(b - damp);
-            data[i + 1] = Math.min(255, Math.round(g + damp * 0.3));
-            data[i + 3] = Math.max(0, Math.min(255, Math.round(a - excess * 0.25)));
-            modified = true;
-          }
-        }
-      } else {
-        // 通用复合色相去杂边：在容差过渡区内将受背景污染的色调引向中性明度
-        const dr = r - tr;
-        const dg = g - tg;
-        const db = b - tb;
-        const distSq = dr * dr + dg * dg + db * db;
-        if (distSq < tolSq) {
-          const factor = 1 - Math.sqrt(distSq) / tolRange;
-          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-          const blend = factor * 0.6;
-          data[i] = Math.round(r * (1 - blend) + lum * blend);
-          data[i + 1] = Math.round(g * (1 - blend) + lum * blend);
-          data[i + 2] = Math.round(b * (1 - blend) + lum * blend);
-          data[i + 3] = Math.max(0, Math.min(255, Math.round(a - factor * 35)));
-          modified = true;
-        }
-      }
-    }
-
-    return modified;
   };
 
   // 执行单独去色边滤镜

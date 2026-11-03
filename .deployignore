@@ -1,0 +1,39 @@
+# ==============================================================================
+# Tiamo 子应用发布忽略清单 (.deployignore)
+# ==============================================================================
+
+# 1. 运行时数据与用户上传资产 (神圣不可覆盖)
+data/
+uploads/
+storage/
+*.sqlite
+*.sqlite3
+*.db
+
+# 2. 环境密钥与本地配置
+.env
+.env.local
+.env.*.local
+
+# 3. 日志与临时调试文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+server.log
+
+# 4. 代码管理与系统缓存
+.git/
+.gitignore
+.DS_Store
+Thumbs.db
+
+# 5. 依赖包与本地构建缓存
+node_modules/
+.cache/
+.temp/
+temp/
+
+# 6. 项目级测试与开发历史素材
+docs/legacy/
+

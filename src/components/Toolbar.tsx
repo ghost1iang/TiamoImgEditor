@@ -796,11 +796,32 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         {/* 本地下载 */}
         {currentImage && visibleTools.has('download') && (
           <button 
-            onClick={() => { 
-              const l = document.createElement('a'); 
-              l.href = currentImage; 
-              l.download = 'output.png'; 
-              l.click(); 
+            onClick={async () => {
+              const pad = (n: number) => String(n).padStart(2, '0');
+              const d = new Date();
+              const timestamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+              const filename = `tiamo-image-${timestamp}.png`;
+
+              try {
+                if (navigator.share && navigator.canShare && currentImage.startsWith('data:image')) {
+                  const res = await fetch(currentImage);
+                  const blob = await res.blob();
+                  const file = new File([blob], filename, { type: 'image/png' });
+                  if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: filename });
+                    return;
+                  }
+                }
+              } catch (err: any) {
+                if (err && err.name === 'AbortError') return;
+              }
+
+              const a = document.createElement('a');
+              a.href = currentImage;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
             }} 
             className={`p-1.5 rounded-lg shadow-sm transition-colors ${isCompact ? 'bg-slate-800 text-slate-300 hover:text-blue-400' : 'bg-white border border-slate-200 text-slate-600 hover:text-blue-600'}`} 
             title="保存到本地"

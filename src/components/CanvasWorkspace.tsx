@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ZoomIn, ZoomOut, Maximize, Loader2, Upload } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, Loader2, Upload, Eye } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
 
 interface CanvasWorkspaceProps {
@@ -143,10 +143,15 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           >
             <div className="bg-slate-900/95 text-amber-300 font-mono text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl border border-amber-500/60 backdrop-blur-md flex items-center gap-2.5 whitespace-nowrap">
               <span className={`w-2 h-2 rounded-full ${isHdProcessing ? 'bg-amber-400 animate-ping' : 'bg-amber-400'}`} />
-              <span>
-                {isHdProcessing 
-                  ? '⚡ 正在重构高清像素...' 
-                  : `${Math.round(curBox.w)} × ${Math.round(curBox.h)} px (${ratio}%)`}
+              <span className="flex items-center gap-1.5">
+                {isHdProcessing ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin text-amber-400" />
+                    <span>正在重构高清像素...</span>
+                  </>
+                ) : (
+                  `${Math.round(curBox.w)} × ${Math.round(curBox.h)} px (${ratio}%)`
+                )}
               </span>
 
               {/* 原图 / 高清 实时按住对比 */}
@@ -165,7 +170,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   }`}
                   title="按住鼠标查看原图，松开恢复高清图"
                 >
-                  <span>👁️</span>
+                  <Eye size={12} />
                   <span>{isComparingOriginal ? '当前显示: 原图' : '按住对比原图'}</span>
                 </button>
               )}
@@ -415,17 +420,18 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             })()}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 rounded-3xl text-center bg-white/50">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
-              <Upload size={28} />
+          <label className="w-full max-w-md mx-auto py-14 px-8 border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center text-center transition-all duration-200 group cursor-pointer hover:shadow-2xl">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-105 transition-transform duration-200">
+              <Upload size={28} strokeWidth={2} />
             </div>
-            <h3 className="text-sm font-bold text-slate-800 mb-1">请上传图片或 PDF 开始编辑</h3>
-            <p className="text-xs text-slate-400 mb-4">支持拖拽文件到此处，或点击下方按钮导入</p>
-            <label className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl shadow cursor-pointer hover:bg-slate-800 active:scale-95 transition-all">
-              选择文件
-              <input type="file" accept="image/*,application/pdf" onChange={handleUpload} className="hidden" />
-            </label>
-          </div>
+            <h3 className="text-base font-bold text-slate-800 mb-1">点击或拖拽图片至此</h3>
+            <p className="text-xs text-slate-400 mb-5">支持 JPG、PNG、WebP、SVG 或 PDF 格式文件</p>
+            <span className="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow cursor-pointer group-hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-1.5">
+              <Upload size={14} />
+              <span>选择本地文件</span>
+            </span>
+            <input type="file" accept="image/*,application/pdf" onChange={handleUpload} className="hidden" />
+          </label>
         )}
       </div>
 
