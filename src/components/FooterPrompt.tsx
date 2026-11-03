@@ -22,7 +22,7 @@ export const FooterPrompt: React.FC<FooterPromptProps> = ({ core, className = ""
       <div className="max-w-xl mx-auto flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative group">
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-500 opacity-40">
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-500 opacity-40">
               <MousePointer2 size={12} />
             </div>
             <input 
@@ -32,7 +32,7 @@ export const FooterPrompt: React.FC<FooterPromptProps> = ({ core, className = ""
               onKeyPress={(e) => e.key === 'Enter' && handleEditClick()} 
               disabled={!currentImage || isLoading} 
               placeholder="输入 AI 指令..." 
-              className="w-full h-8 bg-[#f1f5f9] border-2 border-transparent focus:bg-white focus:border-blue-500/20 pl-8 pr-3 outline-none transition-all font-semibold text-[10px] text-slate-700 rounded-xl" 
+              className="w-full h-8 bg-[#f1f5f9] border-2 border-transparent focus:bg-white focus:border-indigo-500/20 pl-8 pr-3 outline-none transition-all font-semibold text-[10px] text-slate-700 rounded-xl" 
             />
           </div>
           <button 

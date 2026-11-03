@@ -150,7 +150,7 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {selectionRegion.type === 'rect' ? (
                   <div 
-                    className={`absolute border-2 border-blue-500 border-dashed ${isRegionInverted ? 'bg-black/40' : 'shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]'}`} 
+                    className={`absolute border-2 border-indigo-500 border-dashed ${isRegionInverted ? 'bg-black/40' : 'shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]'}`} 
                     style={{ 
                       left: `${(selectionRegion.data.x / imageRef.current.naturalWidth) * 100}%`, 
                       top: `${(selectionRegion.data.y / imageRef.current.naturalHeight) * 100}%`, 
@@ -161,7 +161,7 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
                     {[0, 1, 2, 3].map(i => (
                       <div 
                         key={i} 
-                        className="absolute w-3.5 h-3.5 bg-white border-2 border-blue-600 rounded-full shadow-lg z-30 pointer-events-auto cursor-move" 
+                        className="absolute w-3.5 h-3.5 bg-white border-2 border-indigo-600 rounded-full shadow-lg z-30 pointer-events-auto cursor-move" 
                         style={{ 
                           left: i === 1 || i === 2 ? '100%' : '0', 
                           top: i === 2 || i === 3 ? '100%' : '0', 
@@ -320,7 +320,7 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-[999995]">
             {/* 左上角物理坐标 */}
             <div 
-              className="absolute pointer-events-none whitespace-nowrap bg-slate-950/95 text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded-md shadow-2xl border border-blue-400 backdrop-blur-md flex items-center gap-1.5 select-none"
+              className="absolute pointer-events-none whitespace-nowrap bg-slate-950/95 text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded-md shadow-2xl border border-indigo-400 backdrop-blur-md flex items-center gap-1.5 select-none"
               style={{
                 left: `${tlPos.x}px`,
                 top: `${tlPos.y}px`,

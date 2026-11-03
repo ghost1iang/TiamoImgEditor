@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ core }) => {
       <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 bg-white border-r border-slate-200 flex flex-col relative overflow-hidden shadow-sm shrink-0`}>
         <div className="p-2 border-b border-slate-100 flex justify-between items-center whitespace-nowrap text-xs leading-none">
           <div className="flex items-center gap-2">
-            <div className="p-1 bg-blue-50 text-blue-600 font-black rounded">
+            <div className="p-1 bg-indigo-50 text-indigo-600 font-black rounded">
               <History size={14} />
             </div>
             <span className="font-bold text-slate-700">编辑历史</span>
@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ core }) => {
                     setPanOffset(item.panOffset);
                   }
                 }} 
-                className={`group cursor-pointer border-2 p-1.5 transition-all duration-200 rounded-xl ${activeRecord?.id === item.id ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-transparent hover:bg-slate-50'}`}
+                className={`group cursor-pointer border-2 p-1.5 transition-all duration-200 rounded-xl ${activeRecord?.id === item.id ? 'border-indigo-500 bg-indigo-50/50 shadow-sm' : 'border-transparent hover:bg-slate-50'}`}
               >
                 <div className="relative aspect-[4/3] overflow-hidden mb-1 bg-slate-100 border border-slate-200 shadow-inner rounded-lg leading-[0]">
                   <img 
@@ -84,8 +84,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ core }) => {
                     className="w-full h-full object-cover" 
                     onLoad={(e) => handleImageLoad(item.id, e.currentTarget)}
                   />
-                  <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <RotateCcw size={16} className="text-blue-600" />
+                  <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <RotateCcw size={16} className="text-indigo-600" />
                   </div>
                 </div>
                 {/* 底部：左边文件说明，右边图片像素值 WxH */}
@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ core }) => {
       {/* 展开/收起按钮 */}
       <button 
         onClick={() => setSidebarOpen(!sidebarOpen)} 
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-200 shadow-sm p-1 text-slate-400 hover:text-blue-600 transition-colors rounded-r-lg"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-200 shadow-sm p-1 text-slate-400 hover:text-indigo-600 transition-colors rounded-r-lg"
       >
         {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>

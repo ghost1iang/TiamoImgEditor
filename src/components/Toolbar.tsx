@@ -589,7 +589,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 {visibleTools.has('wand') && (
                   <button 
                     onClick={() => setActiveTool(activeTool === 'wand' ? null : 'wand')} 
-                    className={`p-1.5 rounded-md transition-all ${activeTool === 'wand' ? 'bg-blue-600 text-white shadow-md' : isCompact ? 'text-slate-300 hover:bg-slate-700 hover:text-blue-400' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`} 
+                    className={`p-1.5 rounded-md transition-all ${activeTool === 'wand' ? 'bg-indigo-600 text-white shadow-md' : isCompact ? 'text-slate-300 hover:bg-slate-700 hover:text-indigo-400' : 'text-slate-500 hover:bg-white hover:text-indigo-600'}`} 
                     title="魔棒选色 (点击图片中需要抠除的颜色)"
                   >
                     <Wand2 size={12} />
@@ -600,7 +600,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 {visibleTools.has('wandMode') && (
                   <button 
                     onClick={() => setSelectionMode(m => m === 'global' ? 'connected' : 'global')} 
-                    className={`px-1.5 py-0.5 text-[8px] font-black uppercase rounded transition-colors ${selectionMode === 'connected' ? 'bg-blue-600 text-white shadow-sm' : isCompact ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                    className={`px-1.5 py-0.5 text-[8px] font-black uppercase rounded transition-colors ${selectionMode === 'connected' ? 'bg-indigo-600 text-white shadow-sm' : isCompact ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
                     title="魔棒选色模式：全屏匹配 vs 仅连续区域"
                   >
                     {selectionMode === 'global' ? '全屏' : '连通'}
@@ -617,7 +617,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                       max="255" 
                       value={tolerance} 
                       onChange={(e) => setTolerance(parseInt(e.target.value))} 
-                      className="w-12 h-1 bg-slate-300 appearance-none cursor-pointer accent-blue-600 rounded-lg" 
+                      className="w-12 h-1 bg-slate-300 appearance-none cursor-pointer accent-indigo-600 rounded-lg" 
                     />
                   </div>
                 )}
@@ -641,7 +641,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 {visibleTools.has('pipette') && (
                   <button 
                     onClick={() => setActiveTool(activeTool === 'pipette' ? null : 'pipette')} 
-                    className={`p-1.5 rounded-md transition-all ${activeTool === 'pipette' ? 'bg-blue-600 text-white shadow-md' : isCompact ? 'text-slate-300 hover:bg-slate-700 hover:text-blue-400' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`} 
+                    className={`p-1.5 rounded-md transition-all ${activeTool === 'pipette' ? 'bg-indigo-600 text-white shadow-md' : isCompact ? 'text-slate-300 hover:bg-slate-700 hover:text-indigo-400' : 'text-slate-500 hover:bg-white hover:text-indigo-600'}`} 
                     title="吸管取色"
                   >
                     <Pipette size={12} />
@@ -675,7 +675,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     disabled={!hasSelection} 
                     className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
                       hasSelection 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95' 
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md active:scale-95' 
                         : 'opacity-30 cursor-not-allowed pointer-events-none text-slate-400'
                     }`} 
                     title={hasSelection ? "在选区内着色" : "无选区 (无法着色)"}
@@ -823,7 +823,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               a.click();
               document.body.removeChild(a);
             }} 
-            className={`p-1.5 rounded-lg shadow-sm transition-colors ${isCompact ? 'bg-slate-800 text-slate-300 hover:text-blue-400' : 'bg-white border border-slate-200 text-slate-600 hover:text-blue-600'}`} 
+            className={`p-1.5 rounded-lg shadow-sm transition-colors ${isCompact ? 'bg-slate-800 text-slate-300 hover:text-indigo-400' : 'bg-white border border-slate-200 text-slate-600 hover:text-indigo-600'}`} 
             title="保存到本地"
           >
             <Download size={14} />

@@ -165,7 +165,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   onTouchEnd={(e) => { e.stopPropagation(); setIsComparingOriginal(false); }}
                   className={`ml-1 px-2 py-0.5 rounded text-[10px] font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer select-none ${
                     isComparingOriginal 
-                      ? 'bg-blue-600 text-white ring-2 ring-blue-400' 
+                      ? 'bg-indigo-600 text-white ring-2 ring-indigo-400' 
                       : 'bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700'
                   }`}
                   title="按住鼠标查看原图，松开恢复高清图"
@@ -230,7 +230,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   {selectionRegion.type === 'rect' ? (
                     <div 
-                      className={`absolute border-2 border-blue-500 border-dashed ${isRegionInverted ? 'bg-black/40' : 'shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]'}`} 
+                      className={`absolute border-2 border-indigo-500 border-dashed ${isRegionInverted ? 'bg-black/40' : 'shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]'}`} 
                       style={{ 
                         left: `${(selectionRegion.data.x / imageRef.current.naturalWidth) * 100}%`, 
                         top: `${(selectionRegion.data.y / imageRef.current.naturalHeight) * 100}%`, 
@@ -241,7 +241,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                       {(activeTool === 'rect' || activeTool === null) && [0, 1, 2, 3].map(i => (
                         <div 
                           key={i} 
-                          className="absolute w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-lg z-30 pointer-events-auto cursor-move" 
+                          className="absolute w-4 h-4 bg-white border-2 border-indigo-600 rounded-full shadow-lg z-30 pointer-events-auto cursor-move" 
                           style={{ 
                             left: i === 1 || i === 2 ? '100%' : '0', 
                             top: i === 2 || i === 3 ? '100%' : '0', 
@@ -359,7 +359,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
               {/* 加载动画 */}
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
-                  <Loader2 size={32} className="text-blue-600 animate-spin" />
+                  <Loader2 size={32} className="text-indigo-600 animate-spin" />
                 </div>
               )}
             </div>
@@ -420,13 +420,13 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             })()}
           </div>
         ) : (
-          <label className="w-full max-w-md mx-auto py-14 px-8 border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center text-center transition-all duration-200 group cursor-pointer hover:shadow-2xl">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-105 transition-transform duration-200">
+          <label className="w-full max-w-md mx-auto py-14 px-8 border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center text-center transition-all duration-200 group cursor-pointer hover:shadow-2xl">
+            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-105 transition-transform duration-200">
               <Upload size={28} strokeWidth={2} />
             </div>
             <h3 className="text-base font-bold text-slate-800 mb-1">点击或拖拽图片至此</h3>
             <p className="text-xs text-slate-400 mb-5">支持 JPG、PNG、WebP、SVG 或 PDF 格式文件</p>
-            <span className="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow cursor-pointer group-hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-1.5">
+            <span className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-md shadow-indigo-600/20 cursor-pointer active:scale-95 transition-all flex items-center gap-1.5">
               <Upload size={14} />
               <span>选择本地文件</span>
             </span>
@@ -515,7 +515,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           <div className="absolute inset-0 pointer-events-none overflow-hidden z-50">
             {/* 左上角物理坐标 */}
             <div 
-              className="absolute pointer-events-none whitespace-nowrap bg-slate-950/95 text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded-md shadow-2xl border border-blue-400 backdrop-blur-md flex items-center gap-1.5 select-none"
+              className="absolute pointer-events-none whitespace-nowrap bg-slate-950/95 text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded-md shadow-2xl border border-indigo-400 backdrop-blur-md flex items-center gap-1.5 select-none"
               style={{
                 left: `${tlPos.x}px`,
                 top: `${tlPos.y}px`,
