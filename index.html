@@ -1,9 +1,58 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+  <!-- === TiamoGuard 零信任物理级安全盾牌 (Fail-Close 默认阻断与 TiamoBar 微前端) === -->
+  <style id="__tiamo_shield__">
+    html,
+    body {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+  </style>
+  <script>
+    (function () {
+      window.__tiamoInterlock = function (code, title, msg) {
+        if (window.__tiamo_watchdog__) { 
+          clearTimeout(window.__tiamo_watchdog__); 
+          window.__tiamo_watchdog__ = null; 
+        }
+        var s = document.getElementById('__tiamo_shield__');
+        if (s && s.parentNode) s.parentNode.removeChild(s);
+
+        // 本地离线与单机开发环境优雅放行 (localhost / 127.0.0.1 / file://)
+        var isLocal = window.location.protocol === 'file:' || 
+                      window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' || 
+                      window.location.hostname === '0.0.0.0';
+        if (isLocal) {
+          console.warn('[TiamoGuard] 本地离线开发环境，跳过安全阻断屏放行 UI');
+          document.documentElement.style.display = 'block';
+          document.documentElement.style.visibility = 'visible';
+          document.documentElement.style.opacity = '1';
+          return;
+        }
+
+        var target = 'https://tiamoland.i234.me/?redirect=' + encodeURIComponent(window.location.href);
+        document.open();
+        document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>' + code + ' · 安全熔断</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;background:#0f172a;background-image:radial-gradient(circle at 50% 15%,rgba(225,29,72,0.16) 0%,transparent 60%);display:flex;align-items:center;justify-content:center;padding:1.5rem;color:#0f172a;}.card{max-width:480px;width:100%;background:rgba(255,255,255,0.92);backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,0.95);border-radius:24px;padding:2.5rem 2.2rem;box-shadow:0 30px 60px -15px rgba(0,0,0,0.4);text-align:center;}.icon{width:58px;height:58px;margin:0 auto 1.25rem;background:linear-gradient(135deg,#e11d48,#be123c);border-radius:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 25px -4px rgba(225,29,72,0.45);color:#fff;}.badge{display:inline-flex;padding:4px 12px;background:rgba(225,29,72,0.1);border:1px solid rgba(225,29,72,0.25);border-radius:9999px;font-size:0.725rem;font-weight:700;color:#e11d48;margin-bottom:1.25rem;letter-spacing:0.05em;}.t{font-size:1.45rem;font-weight:700;color:#0f172a;margin-bottom:0.5rem;}.d{font-size:0.9rem;color:#64748b;line-height:1.6;margin-bottom:1.85rem;}.actions{display:flex;gap:12px;justify-content:center;}.btn{display:inline-flex;align-items:center;justify-content:center;padding:0.75rem 1.4rem;border-radius:12px;font-size:0.9rem;font-weight:600;text-decoration:none;cursor:pointer;}.btn-p{background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;box-shadow:0 4px 12px rgba(2,132,199,0.3);}.btn-s{background:rgba(15,23,42,0.06);color:#334155;border:1px solid rgba(15,23,42,0.12);}</style></head><body><div class="card"><div class="icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div><div class="badge">SECURITY INTERLOCK · ' + code + '</div><h1 class="t">' + title + '</h1><p class="d">' + msg + '</p><div class="actions"><button class="btn btn-s" onclick="location.reload()">重新连接</button><a class="btn btn-p" href="' + target + '">返回身份认证中心</a></div></div></body></html>');
+        document.close();
+      };
+      window.__tiamo_watchdog__ = setTimeout(function () {
+        window.__tiamoInterlock('504 TIMEOUT', '身份鉴权超时 (504)', '统一身份认证中心响应超时。为保障家庭隐私与系统安全，系统已启动主动安全熔断机制，拦截了当前访问。');
+      }, 4000);
+    })();
+  </script>
+  <script src="https://tiamoland.i234.me/tiamo-guard.js?v=20261001_v7" data-app="image"
+    onerror="window.__tiamoInterlock('503 OFFLINE', '认证网关进程离线 (503)', '无法连接到 TiamoLogin 统一身份认证中心（进程可能处于停止、重启或维护状态）。为保障私有云安全，系统已拦截访问，严防未经鉴权的数据泄露。')"></script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TiamoImageEditor - 在线图片编辑工作台</title>
+
+  <!-- 全网统一 SVG Favicon 与 Web 徽标 -->
+  <link rel="icon" type="image/svg+xml" href="https://tiamoland.i234.me/api/icons/image.svg" />
+  <link rel="apple-touch-icon" href="https://tiamoland.i234.me/api/icons/image.svg" />
   
   <!-- 彻底杜绝浏览器缓存 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
