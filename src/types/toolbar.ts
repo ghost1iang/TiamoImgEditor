@@ -45,9 +45,9 @@ export interface ToolbarCategoryDef {
 
 export const TOOLBAR_CATEGORIES: ToolbarCategoryDef[] = [
   { key: 'selection', name: '选区工具', desc: '矩形、修边、套索、多边、反选与清除' },
-  { key: 'cutout', name: '魔棒抠图', desc: '透明底纹、魔棒取色、模式切换、容差调节与擦除' },
+  { key: 'cutout', name: '魔棒抠图', desc: '透明底纹、魔棒取色、模式切换与容差调节' },
   { key: 'color', name: '色彩吸管', desc: '目标着色色卡与屏幕像素吸管' },
-  { key: 'action', name: '剪裁着色', desc: '按选区裁切画布与选区着色填充' },
+  { key: 'action', name: '剪裁与擦除', desc: '按选区裁切画布、擦除选区内容为透明与选区着色' },
   { key: 'transform', name: '旋转镜像', desc: '水平垂直翻转、正负90°旋转与自由角度校平' },
   { key: 'system', name: '辅助功能', desc: '图片本地保存、重新上传与工具栏按钮设置' },
 ];
@@ -75,15 +75,15 @@ export const ALL_TOOLBAR_TOOLS: ToolbarToolDef[] = [
   { id: 'wand', name: '魔棒选色', shortName: '魔棒', category: 'cutout', description: '点击图片自动智能分析并选中同类色块', defaultVisible: true },
   { id: 'wandMode', name: '选色模式', shortName: '全屏/连通', category: 'cutout', description: '切换魔棒为全屏颜色匹配或连续区域漫水', defaultVisible: true },
   { id: 'tolerance', name: '容差滑块', shortName: '容差调节', category: 'cutout', description: '1~255 范围内平滑调节魔棒选色容差度', defaultVisible: true },
-  { id: 'erase', name: '橡皮擦除', shortName: '擦除抠图', category: 'cutout', description: '一键抠除魔棒已选中的颜色像素 (内置去色边)', defaultVisible: true },
 
   // 3. 色彩与吸管
   { id: 'colorPicker', name: '着色调色板', shortName: '调色板', category: 'color', description: '选取选区着色与画笔填充的目标颜色', defaultVisible: true },
   { id: 'pipette', name: '吸管取色', shortName: '吸管', category: 'color', description: '在画布上任意点击并实时拾取像素十六进制色', defaultVisible: true },
 
-  // 4. 选区操作
+  // 4. 选区操作 (剪裁、着色、擦除与稀疏高清)
   { id: 'crop', name: '按区剪裁', shortName: '剪裁', category: 'action', description: '按当前活动选区直接裁剪整幅画面', defaultVisible: true },
   { id: 'fill', name: '选区着色', shortName: '着色', category: 'action', description: '将当前调色板颜色批量填充进选区', defaultVisible: true },
+  { id: 'erase', name: '选区擦除', shortName: '擦除', category: 'action', description: '擦除魔棒、矩形、套索或多边形选区内容为透明区域', defaultVisible: true },
   { id: 'hd', name: '稀疏高清', shortName: '高清', category: 'action', description: '基于稀疏插值与超分重构无损放大图片分辨率', defaultVisible: true },
 
   // 5. 旋转与镜像

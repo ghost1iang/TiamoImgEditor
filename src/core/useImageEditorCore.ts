@@ -1398,38 +1398,122 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     setIsLoading(false);
   };
 
-  const applyWandCutout = () => {
-    if (!maskCanvas || !imageRef.current) return;
-    const img = imageRef.current; const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d'); 
-    if (!ctx) return;
-    ctx.drawImage(img, 0, 0);
-    const maskData = maskCanvas.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data;
-    if (!maskData) return;
-    const imgDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgDataObj.data;
+  /**
+   * 选区擦除为透明：
+   * 1. 支持魔棒选色蒙版 (maskCanvas)
+   * 2. 支持矩形框选 (selectionRegion.type === 'rect')
+   * 3. 支持套索手绘框选 (selectionRegion.type === 'path')
+   * 4. 支持多边形框选 (quadPoints && isPolyClosed)
+   * 5. 适配反选状态 (isRegionInverted)
+   * 将选区内的对应区域 Alpha 通道置为 0，变为透明背景。
+   */
+  const handleEraseSelection = () => {
+    if (!currentImage || !imageRef.current || !hasSelection) return;
+    setIsLoading(true);
 
-    // 1. 将魔棒选区部分透明化
-    for (let i = 0; i < maskData.length; i += 4) {
-      if (maskData[i + 3] > 0) {
-        data[i + 3] = 0;
+    const img = imageRef.current;
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    const canvas = document.createElement('canvas');
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setIsLoading(false);
+      return;
+    }
+
+    // 绘制当前画面
+    ctx.drawImage(img, 0, 0);
+    let modified = false;
+
+    // 1. 魔棒蒙版擦除
+    if (maskCanvas) {
+      const maskCtx = maskCanvas.getContext('2d');
+      if (maskCtx) {
+        const maskData = maskCtx.getImageData(0, 0, nw, nh).data;
+        const imgDataObj = ctx.getImageData(0, 0, nw, nh);
+        const data = imgDataObj.data;
+
+        for (let i = 0; i < maskData.length; i += 4) {
+          if (maskData[i + 3] > 0) {
+            data[i + 3] = 0;
+            modified = true;
+          }
+        }
+
+        // 默认自动开启全色相智能去溢色算法
+        processUniversalDeSpill(data, sampledColor, tolerance);
+        ctx.putImageData(imgDataObj, 0, 0);
       }
     }
 
-    // 2. 默认自动开启全色相智能去溢色算法（消除边缘残留杂光）
-    processUniversalDeSpill(data, sampledColor, tolerance);
+    // 2. 矩形选区擦除
+    if (selectionRegion?.type === 'rect') {
+      const r = selectionRegion.data;
+      if (!isRegionInverted) {
+        // 正选：直接清空矩形内部
+        ctx.clearRect(r.x, r.y, r.w, r.h);
+        modified = true;
+      } else {
+        // 反选：清空矩形外部
+        ctx.clearRect(0, 0, nw, r.y);
+        ctx.clearRect(0, r.y + r.h, nw, nh - (r.y + r.h));
+        ctx.clearRect(0, r.y, r.x, r.h);
+        ctx.clearRect(r.x + r.w, r.y, nw - (r.x + r.w), r.h);
+        modified = true;
+      }
+    }
 
-    ctx.putImageData(imgDataObj, 0, 0); const res = canvas.toDataURL();
-    const colorDesc = sampledColor ? `去色边` : "智能去边";
-    const rec: HistoryRecord = { 
-      id: Date.now(), 
-      url: res, 
-      prompt: `魔棒擦除 (${colorDesc})`, 
-      timestamp: new Date().toLocaleTimeString() 
-    };
-    setHistory(prev => [rec, ...prev]); setCurrentImage(res); setActiveRecord(rec); resetWand();
+    // 3. 套索或多边形路径选区擦除
+    const pts = (quadPoints && isPolyClosed)
+      ? quadPoints
+      : (selectionRegion?.type === 'path' ? (selectionRegion.data as Point[]) : null);
+
+    if (pts && pts.length >= 3) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+
+      if (!isRegionInverted) {
+        // 正选：清空多边形内部
+        ctx.moveTo(pts[0].x, pts[0].y);
+        pts.forEach((p, idx) => { if (idx > 0) ctx.lineTo(p.x, p.y); });
+        ctx.closePath();
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+      } else {
+        // 反选：清空多边形外部 (evenodd 绕数)
+        ctx.rect(0, 0, nw, nh);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        pts.forEach((p, idx) => { if (idx > 0) ctx.lineTo(p.x, p.y); });
+        ctx.closePath();
+        ctx.fillStyle = '#000000';
+        ctx.fill('evenodd');
+      }
+      ctx.restore();
+      modified = true;
+    }
+
+    if (modified) {
+      const res = canvas.toDataURL();
+      const rec: HistoryRecord = {
+        id: Date.now(),
+        url: res,
+        prompt: "选区擦除透明",
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setHistory(prev => [rec, ...prev]);
+      setCurrentImage(res);
+      setActiveRecord(rec);
+    }
+
+    clearSelection();
+    resetWand();
+    setIsLoading(false);
   };
+
+  const applyWandCutout = handleEraseSelection;
 
   const executeEdit = async () => {
     if (!currentImage || !prompt.trim()) return;
@@ -1599,6 +1683,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     handleInvertSelection,
     toggleInvertSelection,
     clearSelection,
+    handleEraseSelection,
     applyWandCutout,
     executeEdit,
     handleEditClick,

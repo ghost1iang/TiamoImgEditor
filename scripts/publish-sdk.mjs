@@ -6,7 +6,7 @@
  * 执行逻辑：
  * 1. 读取当前版本号 (package.json / src/version.ts)
  * 2. 确保 dist 打包文件存在 (dist/tiamo-image-editor.umd.js)
- * 3. 在 ../TiamoLogin/sdk/SDKImgEditor 下创建版本号文件夹 (如 v1.5.3)
+ * 3. 在 ../TiamoLogin/sdk/TiamoImgEditor 下创建版本号文件夹 (如 v1.5.3)
  * 4. 拷贝 tiamo-image-editor.umd.js 到该版本号文件夹下
  */
 
@@ -60,8 +60,8 @@ if (!fs.existsSync(umdFile)) {
   process.exit(1);
 }
 
-// 3. 目标目录 (../TiamoLogin/sdk/SDKImgEditor/<版本号>)
-const baseTargetDir = path.resolve(projectRoot, '../TiamoLogin/sdk/SDKImgEditor');
+// 3. 目标目录 (../TiamoLogin/sdk/TiamoImgEditor/<版本号>)
+const baseTargetDir = path.resolve(projectRoot, '../TiamoLogin/sdk/TiamoImgEditor');
 if (!fs.existsSync(baseTargetDir)) {
   fs.mkdirSync(baseTargetDir, { recursive: true });
 }

@@ -12,6 +12,8 @@ export interface DistributedEditorProps extends CoreOptions {
   tools?: ToolbarToolId[] | Record<string, boolean>;
   visibleTools?: ToolbarToolId[];
   hiddenTools?: ToolbarToolId[];
+  showComplete?: boolean;
+  showCancel?: boolean;
   onFinish?: () => void;
   onCancel?: () => void;
 }
@@ -52,8 +54,8 @@ export const DistributedEditor: React.FC<DistributedEditorProps> = (props) => {
           <Toolbar 
             core={core} 
             mode="distributed" 
-            showComplete={true} 
-            showCancel={true} 
+            showComplete={props.showComplete !== undefined ? props.showComplete : true} 
+            showCancel={props.showCancel !== undefined ? props.showCancel : true} 
             tools={props.tools}
             visibleTools={props.visibleTools}
             hiddenTools={props.hiddenTools}

@@ -15,6 +15,8 @@ export interface EditOptions {
   tools?: ToolbarToolId[] | Record<string, boolean>;
   visibleTools?: ToolbarToolId[];
   hiddenTools?: ToolbarToolId[];
+  showComplete?: boolean;
+  showCancel?: boolean;
   toolbarContainer?: HTMLElement | string;
   canvasContainer?: HTMLElement | string;
   apiKey?: string;
@@ -178,6 +180,8 @@ export class TiamoImageEditor {
             tools={options.tools}
             visibleTools={options.visibleTools}
             hiddenTools={options.hiddenTools}
+            showComplete={options.showComplete}
+            showCancel={options.showCancel}
             onComplete={handleDone}
             onCancel={handleCancel}
           />
@@ -191,6 +195,8 @@ export class TiamoImageEditor {
             tools={options.tools}
             visibleTools={options.visibleTools}
             hiddenTools={options.hiddenTools}
+            showComplete={options.showComplete}
+            showCancel={options.showCancel}
             onComplete={handleDone}
             onCancel={handleCancel}
           />

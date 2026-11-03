@@ -12,6 +12,8 @@ export interface ModalEditorProps extends CoreOptions {
   tools?: ToolbarToolId[] | Record<string, boolean>;
   visibleTools?: ToolbarToolId[];
   hiddenTools?: ToolbarToolId[];
+  showComplete?: boolean;
+  showCancel?: boolean;
   onFinish?: () => void;
   onCancel?: () => void;
 }
@@ -31,8 +33,8 @@ export const ModalEditor: React.FC<ModalEditorProps> = (props) => {
           <Toolbar 
             core={core} 
             mode="modal" 
-            showComplete={true} 
-            showCancel={true} 
+            showComplete={props.showComplete !== undefined ? props.showComplete : true} 
+            showCancel={props.showCancel !== undefined ? props.showCancel : true} 
             tools={props.tools}
             visibleTools={props.visibleTools}
             hiddenTools={props.hiddenTools}

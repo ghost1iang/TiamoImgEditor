@@ -275,6 +275,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     commitFinalCrop,
     maskCanvas,
     handleInvertSelection,
+    handleEraseSelection,
     applyWandCutout,
     handleUpload,
     isLoading,
@@ -438,12 +439,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     visibleTools.has('alphaMask') || 
     visibleTools.has('wand') || 
     visibleTools.has('wandMode') || 
-    visibleTools.has('tolerance') || 
-    visibleTools.has('erase');
+    visibleTools.has('tolerance');
 
   const hasColorTools = visibleTools.has('colorPicker') || visibleTools.has('pipette');
 
-  const hasActionTools = visibleTools.has('crop') || visibleTools.has('fill') || visibleTools.has('hd');
+  const hasActionTools = visibleTools.has('crop') || visibleTools.has('fill') || visibleTools.has('erase') || visibleTools.has('hd');
 
   const hasTransformTools = 
     visibleTools.has('flipH') || 
@@ -621,26 +621,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     />
                   </div>
                 )}
-
-                {visibleTools.has('erase') && (visibleTools.has('wand') || visibleTools.has('wandMode') || visibleTools.has('tolerance')) && (
-                  <div className={`w-px h-3 mx-0.5 ${isCompact ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                )}
-
-                {/* 擦除按钮 */}
-                {visibleTools.has('erase') && (
-                  <button
-                    onClick={applyWandCutout}
-                    disabled={!maskCanvas || isLoading}
-                    className={`p-1.5 rounded-md transition-all ${
-                      maskCanvas && !isLoading
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 cursor-pointer'
-                        : 'opacity-30 cursor-not-allowed pointer-events-none text-slate-400'
-                    }`}
-                    title={maskCanvas ? "擦除已选中的颜色区域" : "擦除 (请先使用魔棒在画面选色)"}
-                  >
-                    <Eraser size={12} />
-                  </button>
-                )}
               </div>
             )}
 
@@ -702,6 +682,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   >
                     <PaintBucket size={12} />
                     <span className="text-[10px] font-bold">着色</span>
+                  </button>
+                )}
+
+                {visibleTools.has('erase') && (
+                  <button 
+                    onClick={handleEraseSelection || applyWandCutout} 
+                    disabled={!hasSelection || isLoading} 
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                      hasSelection && !isLoading
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-md active:scale-95 cursor-pointer' 
+                        : 'opacity-30 cursor-not-allowed pointer-events-none text-slate-400'
+                    }`} 
+                    title={hasSelection ? "擦除选区内容为透明区域 (支持魔棒、矩形、套索、多边形)" : "无选区 (请先通过魔棒、矩形、套索或多边形框选)"}
+                  >
+                    <Eraser size={12} />
+                    <span className="text-[10px] font-bold">擦除</span>
                   </button>
                 )}
 
