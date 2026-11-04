@@ -19,7 +19,8 @@ import {
   Sparkles,
   Scissors,
   Wand2,
-  Settings
+  Settings,
+  Scan
 } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
 import { ToolbarToolId, resolveVisibleTools } from '../types/toolbar';
@@ -462,7 +463,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     visibleTools.has('flipV') || 
     visibleTools.has('rotateCcw') || 
     visibleTools.has('rotateCw') || 
-    visibleTools.has('rotateAny');
+    visibleTools.has('rotateAny') ||
+    visibleTools.has('ortho');
 
   // 载入图片后，工具栏与其包含的全部SDK按钮（含工具栏设置）才一并出现
   if (!currentImage) {
@@ -786,6 +788,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   >
                     <Compass size={12} />
                     <span className="text-[10px] font-bold">{rotationAngle !== 0 ? `${((rotationAngle % 360) + 360) % 360}°` : '旋转'}</span>
+                  </button>
+                )}
+
+                {((visibleTools.has('rotateCcw') || visibleTools.has('rotateCw') || visibleTools.has('rotateAny') || visibleTools.has('flipH') || visibleTools.has('flipV')) && visibleTools.has('ortho')) && (
+                  <div className={`w-px h-3 mx-0.5 ${isCompact ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                )}
+
+                {/* 矩形正交化校正按钮 */}
+                {visibleTools.has('ortho') && (
+                  <button 
+                    onClick={() => setActiveTool(activeTool === 'ortho' ? null : 'ortho')} 
+                    className={`flex items-center gap-1 px-1.5 py-1 rounded-md transition-all ${
+                      activeTool === 'ortho' 
+                        ? 'bg-indigo-600 text-white shadow-md' 
+                        : isCompact 
+                          ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                          : 'text-slate-500 hover:bg-white hover:text-indigo-600'
+                    }`} 
+                    title="矩形正交化 (四角顶点对齐与透视正交平面校正)"
+                  >
+                    <Scan size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold">正交化</span>
                   </button>
                 )}
               </div>

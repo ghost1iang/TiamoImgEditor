@@ -1,6 +1,6 @@
 {
   "name": "tiamo-image-editor-sdk",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Zero-dependency Image Editor SDK with modal, in-place toolbar, and distributed modes",
   "main": "dist/tiamo-image-editor.umd.js",
   "module": "dist/tiamo-image-editor.es.js",

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SDK_VERSION } from '../version';
 import { executeSparseHdReconstruction } from './algorithms/sparseHd';
+import { calculateOrthoTargetDimensions, performPerspectiveOrthogonalization } from './algorithms/ortho';
 import { isInsideLockedRegion, processUniversalDeSpill } from './algorithms/wand';
 import { findNonTransparentBounds } from './algorithms/crop';
 
@@ -95,6 +96,17 @@ export function useImageEditorCore(options: CoreOptions = {}) {
   const [hdOriginalImage, setHdOriginalImage] = useState<string | null>(null);
   const [isComparingOriginal, setIsComparingOriginal] = useState(false);
   const [isHdProcessing, setIsHdProcessing] = useState(false);
+
+  // 矩形正交化校正工具状态
+  const [orthoPoints, setOrthoPoints] = useState<Point[] | null>(null);
+  const [draggingOrthoIdx, setDraggingOrthoIdx] = useState<number>(-1);
+  const [orthoMagnifier, setOrthoMagnifier] = useState<{
+    visible: boolean;
+    imgX: number;
+    imgY: number;
+    clientX: number;
+    clientY: number;
+  } | null>(null);
   
   const imageRef = useRef<HTMLImageElement | null>(null);
   const displayMaskRef = useRef<HTMLCanvasElement | null>(null);
@@ -125,6 +137,9 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     setIsPolyClosed(false);
     setPolyMousePos(null);
     setPolyHoverClose(false);
+    setOrthoPoints(null);
+    setDraggingOrthoIdx(-1);
+    setOrthoMagnifier(null);
   };
   const resetView = () => { setZoom(1); setPanOffset({ x: 0, y: 0 }); setDisplaySize(null); };
   const changeZoom = (delta: number) => setZoom(prev => Math.max(0.5, Math.min(5, Math.round((prev + delta) * 100) / 100)));
@@ -311,6 +326,41 @@ export function useImageEditorCore(options: CoreOptions = {}) {
   }, [activeTool, currentImage]);
 
   useEffect(() => {
+    if (activeTool === 'ortho') {
+      if (imageRef.current) {
+        const nw = imageRef.current.naturalWidth;
+        const nh = imageRef.current.naturalHeight;
+        if (nw > 0 && nh > 0) {
+          setOrthoPoints(prev => {
+            if (prev && prev.length === 4) return prev;
+            if (selectionRegion && selectionRegion.type === 'rect') {
+              const r = selectionRegion.data;
+              return [
+                { x: Math.max(0, r.x), y: Math.max(0, r.y) },
+                { x: Math.min(nw, r.x + r.w), y: Math.max(0, r.y) },
+                { x: Math.min(nw, r.x + r.w), y: Math.min(nh, r.y + r.h) },
+                { x: Math.max(0, r.x), y: Math.min(nh, r.y + r.h) },
+              ];
+            }
+            const marginX = Math.round(nw * 0.15);
+            const marginY = Math.round(nh * 0.15);
+            return [
+              { x: marginX, y: marginY },
+              { x: nw - marginX, y: marginY },
+              { x: nw - marginX, y: nh - marginY },
+              { x: marginX, y: nh - marginY },
+            ];
+          });
+        }
+      }
+      setSelectionRegion(null);
+    } else {
+      setDraggingOrthoIdx(-1);
+      setOrthoMagnifier(null);
+    }
+  }, [activeTool, currentImage]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => { if (e.code === 'Space' && !isLoading) setSpacePressed(true); };
     const handleKeyUp = (e: KeyboardEvent) => { if (e.code === 'Space') setSpacePressed(false); };
     window.addEventListener('keydown', handleKeyDown);
@@ -445,8 +495,25 @@ export function useImageEditorCore(options: CoreOptions = {}) {
       }
     }
 
-    // 非框选/套索/高清类工具（如魔棒、吸管、多边形打点），在画布外点击时作为画布平移处理
-    if (isOutsideImage && activeTool !== 'rect' && activeTool !== 'lasso' && activeTool !== 'hd') {
+    // 正交化工具 4 角拖拽手柄命中
+    if (activeTool === 'ortho' && orthoPoints && orthoPoints.length === 4) {
+      const thr = 28 / zoom;
+      const idx = orthoPoints.findIndex(p => Math.abs(p.x - imgX) < thr && Math.abs(p.y - imgY) < thr);
+      if (idx !== -1) {
+        setDraggingOrthoIdx(idx);
+        setOrthoMagnifier({
+          visible: true,
+          imgX: orthoPoints[idx].x,
+          imgY: orthoPoints[idx].y,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        });
+        return;
+      }
+    }
+
+    // 非框选/套索/高清/正交化类工具（如魔棒、吸管、多边形打点），在画布外点击时作为画布平移处理
+    if (isOutsideImage && activeTool !== 'rect' && activeTool !== 'lasso' && activeTool !== 'hd' && activeTool !== 'ortho') {
       if (e.button === 0) {
         setIsPanning(true);
         lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -626,6 +693,20 @@ export function useImageEditorCore(options: CoreOptions = {}) {
       return;
     }
 
+    if (activeTool === 'ortho' && draggingOrthoIdx !== -1 && orthoPoints) {
+      const newPts = [...orthoPoints];
+      newPts[draggingOrthoIdx] = { x: imgX, y: imgY };
+      setOrthoPoints(newPts);
+      setOrthoMagnifier({
+        visible: true,
+        imgX,
+        imgY,
+        clientX: e.clientX,
+        clientY: e.clientY,
+      });
+      return;
+    }
+
     if (activeTool === 'quad') {
       if (isPolyClosed && draggingPointIdx !== -1 && quadPoints) {
         let fx = imgX, fy = imgY;
@@ -689,6 +770,8 @@ export function useImageEditorCore(options: CoreOptions = {}) {
   const handleMouseUp = (e?: React.MouseEvent) => {
     setIsPanning(false); 
     setDraggingPointIdx(-1); 
+    setDraggingOrthoIdx(-1);
+    setOrthoMagnifier(null);
     dragStartData.current = null;
     setRectDragPoints(null);
 
@@ -946,6 +1029,51 @@ export function useImageEditorCore(options: CoreOptions = {}) {
       }
     }, 40);
   }, [currentImage, panOffset, zoom, resetWand]);
+
+  const handleResetOrthoPoints = () => {
+    if (!imageRef.current) return;
+    const nw = imageRef.current.naturalWidth;
+    const nh = imageRef.current.naturalHeight;
+    const marginX = Math.round(nw * 0.15);
+    const marginY = Math.round(nh * 0.15);
+    setOrthoPoints([
+      { x: marginX, y: marginY },
+      { x: nw - marginX, y: marginY },
+      { x: nw - marginX, y: nh - marginY },
+      { x: marginX, y: nh - marginY },
+    ]);
+  };
+
+  const handleApplyOrtho = () => {
+    if (!orthoPoints || orthoPoints.length !== 4 || !imageRef.current || !currentImage) return;
+    setIsLoading(true);
+    setTimeout(() => {
+      try {
+        const resCanvas = performPerspectiveOrthogonalization(imageRef.current!, orthoPoints);
+        const resUrl = resCanvas.toDataURL('image/png');
+        const rec: HistoryRecord = {
+          id: Date.now(),
+          url: resUrl,
+          prompt: "矩形正交化校正",
+          timestamp: new Date().toLocaleTimeString(),
+          width: resCanvas.width,
+          height: resCanvas.height,
+        };
+        setHistory(prev => [rec, ...prev]);
+        setCurrentImage(resUrl);
+        setActiveRecord(rec);
+        setOrthoPoints(null);
+        setActiveTool(null);
+      } catch (err: any) {
+        console.error('[Ortho Error]', err);
+        setErrorMessage(`正交化校正失败: ${err?.message || err}`);
+      } finally {
+        setIsLoading(false);
+        setDraggingOrthoIdx(-1);
+        setOrthoMagnifier(null);
+      }
+    }, 50);
+  };
 
   const handleApplyQuadCrop = () => {
     if (!quadPoints || !currentImage || !imageRef.current) return;
@@ -1404,6 +1532,12 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     isComparingOriginal,
     setIsComparingOriginal,
     isHdProcessing,
+    orthoPoints,
+    setOrthoPoints,
+    draggingOrthoIdx,
+    orthoMagnifier,
+    handleApplyOrtho,
+    handleResetOrthoPoints,
     quadPoints,
     setQuadPoints,
     isPolyClosed,

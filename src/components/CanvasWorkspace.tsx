@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { ZoomIn, ZoomOut, Maximize, Loader2, Upload, Eye } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { ZoomIn, ZoomOut, Maximize, Loader2, Upload, Eye, Scan, RotateCcw, Check, X } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
 
 interface CanvasWorkspaceProps {
@@ -52,20 +52,45 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     isComparingOriginal,
     setIsComparingOriginal,
     isHdProcessing,
+    orthoPoints,
+    draggingOrthoIdx,
+    orthoMagnifier,
+    handleApplyOrtho,
+    handleResetOrthoPoints,
+    setActiveTool,
   } = core;
 
   const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const magnifierCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // 放大镜局部高保真像素绘制
+  useEffect(() => {
+    if (activeTool === 'ortho' && orthoMagnifier?.visible && imageRef.current && magnifierCanvasRef.current) {
+      const canvas = magnifierCanvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const img = imageRef.current;
+      const nw = img.naturalWidth;
+      const nh = img.naturalHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const sourceSize = 40; // 40x40 原图采样区域，在 120x120 上呈现 3 倍无损放大
+      const sx = Math.max(0, Math.min(nw - sourceSize, orthoMagnifier.imgX - sourceSize / 2));
+      const sy = Math.max(0, Math.min(nh - sourceSize, orthoMagnifier.imgY - sourceSize / 2));
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, sx, sy, sourceSize, sourceSize, 0, 0, canvas.width, canvas.height);
+    }
+  }, [activeTool, orthoMagnifier, imageRef]);
 
   return (
     <div 
       ref={workspaceRef}
-      className={`flex-1 flex flex-col p-2 overflow-hidden relative no-scrollbar select-none ${isPanning || spacePressed ? 'cursor-grabbing' : (activeTool === 'rect' || activeTool === 'lasso' || activeTool === 'pipette' || activeTool === 'quad' ? 'cursor-crosshair' : (activeTool === 'wand' ? 'cursor-cell' : 'cursor-grab'))} ${className}`} 
+      className={`flex-1 flex flex-col p-2 overflow-hidden relative no-scrollbar select-none ${isPanning || spacePressed ? 'cursor-grabbing' : (activeTool === 'rect' || activeTool === 'lasso' || activeTool === 'pipette' || activeTool === 'quad' || activeTool === 'ortho' ? 'cursor-crosshair' : (activeTool === 'wand' ? 'cursor-cell' : 'cursor-grab'))} ${className}`} 
       onMouseDown={handleMouseDown} 
       onMouseMove={handleMouseMove} 
       onMouseUp={handleMouseUp} 
       onMouseLeave={() => {
-        // 拖拽/框选/高清放大过程中由 window 全局监听接管，移出工作区绝不中断拖拽；仅非拖拽时才安全重置
-        if (!core.regionStart && !isPanning && draggingPointIdx === -1 && drawingPath.length === 0 && !core.rectDragPoints && !hdDragHandle) {
+        // 拖拽/框选/高清放大/正交化过程中由 window 全局监听接管，移出工作区绝不中断拖拽；仅非拖拽时才安全重置
+        if (!core.regionStart && !isPanning && draggingPointIdx === -1 && draggingOrthoIdx === -1 && drawingPath.length === 0 && !core.rectDragPoints && !hdDragHandle) {
           handleMouseUp();
         }
       }}
@@ -87,6 +112,110 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           </div>
         </div>
       )}
+
+      {/* 矩形正交化：贴附于图形上方的常驻信息与执行栏 (支持重置选点、透视逆向映射计算与退出) */}
+      {activeTool === 'ortho' && orthoPoints && orthoPoints.length === 4 && imageRef.current && workspaceRef.current && (() => {
+        const wsRect = workspaceRef.current.getBoundingClientRect();
+        const imgRect = imageRef.current.getBoundingClientRect();
+        const nw = imageRef.current.naturalWidth;
+        const nh = imageRef.current.naturalHeight;
+        if (!nw || !nh || !wsRect.width || !wsRect.height) return null;
+
+        const w1 = Math.hypot(orthoPoints[0].x - orthoPoints[1].x, orthoPoints[0].y - orthoPoints[1].y);
+        const w2 = Math.hypot(orthoPoints[3].x - orthoPoints[2].x, orthoPoints[3].y - orthoPoints[2].y);
+        const h1 = Math.hypot(orthoPoints[0].x - orthoPoints[3].x, orthoPoints[0].y - orthoPoints[3].y);
+        const h2 = Math.hypot(orthoPoints[1].x - orthoPoints[2].x, orthoPoints[1].y - orthoPoints[2].y);
+        const targetW = Math.round(Math.max(w1, w2));
+        const targetH = Math.round(Math.max(h1, h2));
+
+        const badgeH = 34;
+        const offset = 12;
+        const topToolbarSafeY = 68;
+
+        let boxTop = imgRect.top - wsRect.top;
+        let boxBottom = imgRect.bottom - wsRect.top;
+        let boxCenterX = imgRect.left + imgRect.width / 2 - wsRect.left;
+
+        let targetY = boxTop - badgeH - offset;
+        if (targetY < topToolbarSafeY) {
+          if (boxBottom + badgeH + offset < wsRect.height - 20) {
+            targetY = boxBottom + offset;
+          } else {
+            targetY = topToolbarSafeY;
+          }
+        }
+
+        const minCenterX = 180;
+        const maxCenterX = Math.max(minCenterX, wsRect.width - 180);
+        const safeCenterX = Math.min(Math.max(boxCenterX, minCenterX), maxCenterX);
+
+        return (
+          <div 
+            className="absolute z-40 pointer-events-auto transition-none"
+            style={{
+              left: `${safeCenterX}px`,
+              top: `${targetY}px`,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <div className="bg-slate-900/95 text-white font-mono text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl border border-emerald-500/60 backdrop-blur-md flex items-center gap-2.5 whitespace-nowrap">
+              <span className={`w-2 h-2 rounded-full ${isLoading ? 'bg-emerald-400 animate-ping' : 'bg-emerald-400'}`} />
+              <div className="flex items-center gap-1.5 text-emerald-300 font-sans font-bold">
+                <Scan size={13} strokeWidth={2.5} />
+                <span>矩形正交化校正</span>
+              </div>
+              <span className="text-slate-400 font-mono text-[10px]">
+                (~{targetW} × {targetH} px)
+              </span>
+
+              <div className="flex items-center gap-1 ml-1 pl-2 border-l border-slate-700">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleResetOrthoPoints();
+                  }}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-200 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                  title="重置四个控制点至默认位置"
+                >
+                  <RotateCcw size={11} />
+                  <span>重置选点</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApplyOrtho();
+                  }}
+                  disabled={isLoading}
+                  className="px-2.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-[10px] text-white font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="按四个控制点执行透视正交化转换"
+                >
+                  {isLoading ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : (
+                    <Check size={12} strokeWidth={2.5} />
+                  )}
+                  <span>{isLoading ? '处理中...' : '执行正交化'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTool(null);
+                  }}
+                  className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors ml-0.5 cursor-pointer"
+                  title="退出正交化"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 稀疏高清：贴附于图形上方的常驻信息与操作栏 (跟随图形浮动，智能贴边规避视口顶端遮挡裁切) */}
       {activeTool === 'hd' && imageRef.current && workspaceRef.current && (() => {
@@ -356,6 +485,52 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 </svg>
               )}
 
+              {/* 矩形正交化 (四边形选区连线与顶点对齐) */}
+              {activeTool === 'ortho' && orthoPoints && orthoPoints.length === 4 && imageRef.current && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20" viewBox={`0 0 ${imageRef.current.naturalWidth} ${imageRef.current.naturalHeight}`}>
+                  {/* 四边形半透明填充与边界线 (与图像正交化工具.html 保持红底透明规范) */}
+                  <polygon 
+                    points={orthoPoints.map(p => `${p.x},${p.y}`).join(' ')} 
+                    fill="rgba(239, 68, 68, 0.18)" 
+                    stroke="#ef4444" 
+                    strokeWidth={(2 / zoom).toString()} 
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  {/* 四个控制角手柄与角标 */}
+                  {orthoPoints.map((p, i) => {
+                    const isDraggingThis = draggingOrthoIdx === i;
+                    const labels = ['1 (左上)', '2 (右上)', '3 (右下)', '4 (左下)'];
+                    return (
+                      <g key={i}>
+                        <circle 
+                          cx={p.x} 
+                          cy={p.y} 
+                          r={(9 / zoom).toString()} 
+                          fill={isDraggingThis ? "#ffffff" : "#ef4444"} 
+                          stroke="#ffffff" 
+                          strokeWidth={(2.5 / zoom).toString()} 
+                          className="pointer-events-auto cursor-move drop-shadow-md hover:scale-125 transition-transform" 
+                        />
+                        <text
+                          x={p.x + (i === 0 || i === 3 ? -12 / zoom : 12 / zoom)}
+                          y={p.y + (i === 0 || i === 1 ? -12 / zoom : 16 / zoom)}
+                          fill="#ffffff"
+                          stroke="#0f172a"
+                          strokeWidth={(2.5 / zoom).toString()}
+                          paintOrder="stroke"
+                          fontSize={(11 / zoom).toString()}
+                          fontWeight="bold"
+                          textAnchor={i === 0 || i === 3 ? "end" : "start"}
+                          className="select-none pointer-events-none font-mono"
+                        >
+                          {labels[i]}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              )}
+
               {/* 加载动画 */}
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
@@ -535,6 +710,52 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             >
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
               <span>({Math.round(maxX)}, {Math.round(maxY)})</span>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 正交化放大镜：在拖拽控制点时提供局部像素放大与十字准星，避开光标遮挡 */}
+      {activeTool === 'ortho' && orthoMagnifier && orthoMagnifier.visible && workspaceRef.current && (() => {
+        const wsRect = workspaceRef.current.getBoundingClientRect();
+        const magSize = 120;
+        let left = orthoMagnifier.clientX - wsRect.left + 24;
+        let top = orthoMagnifier.clientY - wsRect.top - 60;
+
+        if (left + magSize + 16 > wsRect.width) {
+          left = orthoMagnifier.clientX - wsRect.left - magSize - 24;
+        }
+        if (top < 12) {
+          top = orthoMagnifier.clientY - wsRect.top + 24;
+        }
+        if (top + magSize + 16 > wsRect.height) {
+          top = wsRect.height - magSize - 16;
+        }
+
+        return (
+          <div
+            className="absolute z-50 pointer-events-none select-none rounded-full shadow-2xl overflow-hidden border-2 border-white ring-2 ring-black/30 bg-slate-900"
+            style={{
+              left: `${Math.max(12, left)}px`,
+              top: `${Math.max(12, top)}px`,
+              width: `${magSize}px`,
+              height: `${magSize}px`,
+            }}
+          >
+            <canvas
+              ref={magnifierCanvasRef}
+              width={120}
+              height={120}
+              className="w-full h-full block"
+              style={{ imageRendering: 'pixelated' }}
+            />
+            {/* 十字准星与中心标定 */}
+            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-red-500/90 -translate-y-1/2 pointer-events-none shadow-sm" />
+            <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-red-500/90 -translate-x-1/2 pointer-events-none shadow-sm" />
+            <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full bg-white ring-2 ring-red-500 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+            {/* 底部微型坐标胶囊 */}
+            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-slate-950/80 backdrop-blur-sm text-[9px] font-mono font-bold text-white px-1.5 py-0.5 rounded-full border border-white/20 whitespace-nowrap">
+              {Math.round(orthoMagnifier.imgX)}, {Math.round(orthoMagnifier.imgY)}
             </div>
           </div>
         );

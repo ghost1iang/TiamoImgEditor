@@ -23,7 +23,8 @@ import {
   RotateCw,
   Compass,
   Settings,
-  Sparkles
+  Sparkles,
+  Scan
 } from 'lucide-react';
 import { 
   ToolbarToolId, 
@@ -56,6 +57,7 @@ const TOOL_ICONS: Record<ToolbarToolId, React.ReactNode> = {
   rotateCcw: <RotateCcw size={13} />,
   rotateCw: <RotateCw size={13} />,
   rotateAny: <Compass size={13} />,
+  ortho: <Scan size={13} />,
   settings: <Settings size={13} />,
 };
 
@@ -87,7 +89,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   const applyRecommended = () => {
     onSetTools([
       'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny',
+      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho',
       'settings'
     ]);
   };

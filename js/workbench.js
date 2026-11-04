@@ -383,12 +383,12 @@
       'rect', 'cropAuto', 'lasso', 'quad', 'invert', 'clear',
       'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase',
       'colorPicker', 'pipette', 'crop', 'fill', 'hd',
-      'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny',
+      'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny', 'ortho',
       'settings'
     ];
     const RECOMMEND_TOOLS = [
       'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny',
+      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho',
       'settings'
     ];
     const CUTOUT_TOOLS = [
@@ -397,7 +397,7 @@
     ];
     const TRANSFORM_TOOLS = [
       'rect', 'cropAuto', 'quad', 'flipH', 'flipV', 'rotateCcw', 
-      'rotateCw', 'rotateAny', 'settings'
+      'rotateCw', 'rotateAny', 'ortho', 'settings'
     ];
 
     function getSavedVisibleTools() {

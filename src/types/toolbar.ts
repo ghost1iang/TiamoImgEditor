@@ -29,6 +29,7 @@ export type ToolbarToolId =
   | 'rotateCcw'     // 逆时针90°
   | 'rotateCw'      // 顺时针90°
   | 'rotateAny'     // 自由旋转
+  | 'ortho'         // 矩形正交化校正
   // 辅助与系统
   | 'settings';     // 工具栏设置
 
@@ -46,7 +47,7 @@ export const TOOLBAR_CATEGORIES: ToolbarCategoryDef[] = [
   { key: 'cutout', name: '魔棒抠图', desc: '透明底纹、魔棒取色、模式切换与容差调节' },
   { key: 'color', name: '色彩吸管', desc: '目标着色色卡与屏幕像素吸管' },
   { key: 'action', name: '剪裁与擦除', desc: '按选区裁切画布、擦除选区内容为透明与选区着色' },
-  { key: 'transform', name: '旋转镜像', desc: '水平垂直翻转、正负90°旋转与自由角度校平' },
+  { key: 'transform', name: '旋转校正', desc: '水平垂直翻转、正负90°旋转、自由角度校平与矩形正交化校正' },
   { key: 'system', name: '辅助功能', desc: '工具栏按钮显示自定义设置' },
 ];
 
@@ -90,6 +91,7 @@ export const ALL_TOOLBAR_TOOLS: ToolbarToolDef[] = [
   { id: 'rotateCcw', name: '逆时针90°', shortName: '左旋90°', category: 'transform', description: '逆时针一键旋转 90 度', defaultVisible: true },
   { id: 'rotateCw', name: '顺时针90°', shortName: '右旋90°', category: 'transform', description: '顺时针一键旋转 90 度', defaultVisible: true },
   { id: 'rotateAny', name: '自由旋转', shortName: '任意角度', category: 'transform', description: '无级滑动、打字输入与微调步进自由角度旋转', defaultVisible: true },
+  { id: 'ortho', name: '矩形正交化', shortName: '正交化', category: 'transform', description: '对四角倾斜或透视畸变的矩形物品进行正交平面校正', defaultVisible: true },
 
   // 6. 通用与系统
   { id: 'settings', name: '工具栏设置', shortName: '设置', category: 'system', description: '自适应浮窗勾选自定义工具栏按钮显示', defaultVisible: true },
