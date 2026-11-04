@@ -1,6 +1,6 @@
 declare const __SDK_VERSION__: string | undefined;
 declare const __SDK_BUILD_TIME__: string | undefined;
 
-export const SDK_VERSION = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'v1.6.2';
-export const SDK_BUILD_TIME = typeof __SDK_BUILD_TIME__ !== 'undefined' ? __SDK_BUILD_TIME__ : '2026-11-04 11:05:00';
-export const SDK_DESCRIPTION = '新增矩形物品正交化校正工具（支持四角顶点对齐、实时高保真放大镜、单应性透视映射与正交平面校正）与工具栏设置按需定制联动';
+export const SDK_VERSION = typeof __SDK_VERSION__ !== 'undefined' ? __SDK_VERSION__ : 'v1.6.3';
+export const SDK_BUILD_TIME = typeof __SDK_BUILD_TIME__ !== 'undefined' ? __SDK_BUILD_TIME__ : '2026-11-04 20:00:00';
+export const SDK_DESCRIPTION = '新增非AI智能寻角工具（基于经典计算机视觉自动识别矩形物体4个推荐顶点并进入正交模式）、矩形正交化校正与工具栏设置按需定制联动';

@@ -30,6 +30,7 @@ export type ToolbarToolId =
   | 'rotateCw'      // 顺时针90°
   | 'rotateAny'     // 自由旋转
   | 'ortho'         // 矩形正交化校正
+  | 'orthoAuto'     // 智能寻角 (自动识别4个推荐顶点)
   // 辅助与系统
   | 'settings';     // 工具栏设置
 
@@ -92,6 +93,7 @@ export const ALL_TOOLBAR_TOOLS: ToolbarToolDef[] = [
   { id: 'rotateCw', name: '顺时针90°', shortName: '右旋90°', category: 'transform', description: '顺时针一键旋转 90 度', defaultVisible: true },
   { id: 'rotateAny', name: '自由旋转', shortName: '任意角度', category: 'transform', description: '无级滑动、打字输入与微调步进自由角度旋转', defaultVisible: true },
   { id: 'ortho', name: '矩形正交化', shortName: '正交化', category: 'transform', description: '对四角倾斜或透视畸变的矩形物品进行正交平面校正', defaultVisible: true },
+  { id: 'orthoAuto', name: '智能寻角', shortName: '寻角', category: 'transform', description: '自动识别画面矩形物体的4个推荐顶点并进入正交模式', defaultVisible: true },
 
   // 6. 通用与系统
   { id: 'settings', name: '工具栏设置', shortName: '设置', category: 'system', description: '自适应浮窗勾选自定义工具栏按钮显示', defaultVisible: true },

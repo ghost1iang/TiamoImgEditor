@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SDK_VERSION } from '../version';
 import { executeSparseHdReconstruction } from './algorithms/sparseHd';
-import { calculateOrthoTargetDimensions, performPerspectiveOrthogonalization } from './algorithms/ortho';
+import { calculateOrthoTargetDimensions, performPerspectiveOrthogonalization, detectOrthoQuadCorners } from './algorithms/ortho';
 import { isInsideLockedRegion, processUniversalDeSpill } from './algorithms/wand';
 import { findNonTransparentBounds } from './algorithms/crop';
 
@@ -1226,6 +1226,37 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     }
   };
 
+  /**
+   * 智能寻角：非 AI 方案自动识别画面中矩形物体的 4 个推荐顶点并进入正交编辑模式
+   * (交互模式与智能修边点击后进入剪裁模式保持一致)
+   */
+  const handleAutoDetectOrtho = () => {
+    if (!currentImage || !imageRef.current) return;
+    try {
+      const { points, isAutoDetected } = detectOrthoQuadCorners(imageRef.current);
+      setOrthoPoints(points);
+      setActiveTool('ortho');
+      if (!isAutoDetected) {
+        console.log('[TiamoImageEditor] 未检测到显著四边形边缘，已应用默认推荐四角顶点');
+      }
+    } catch (err) {
+      console.warn('[TiamoImageEditor] 自动寻角异常，应用默认推荐顶点:', err);
+      if (imageRef.current) {
+        const nw = imageRef.current.naturalWidth;
+        const nh = imageRef.current.naturalHeight;
+        const mx = Math.round(nw * 0.15);
+        const my = Math.round(nh * 0.15);
+        setOrthoPoints([
+          { x: mx, y: my },
+          { x: nw - mx, y: my },
+          { x: nw - mx, y: nh - my },
+          { x: mx, y: nh - my },
+        ]);
+        setActiveTool('ortho');
+      }
+    }
+  };
+
   const commitFinalCrop = () => {
     if (!selectionRegion || selectionRegion.type !== 'rect' || !imageRef.current) return;
     setIsLoading(true); const r = selectionRegion.data; const canvas = document.createElement('canvas');
@@ -1537,6 +1568,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     draggingOrthoIdx,
     orthoMagnifier,
     handleApplyOrtho,
+    handleAutoDetectOrtho,
     handleResetOrthoPoints,
     quadPoints,
     setQuadPoints,
