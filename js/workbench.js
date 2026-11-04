@@ -405,12 +405,14 @@
         const saved = localStorage.getItem('tiamo_active_toolbar_tools');
         if (saved) {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr) && arr.length > 0) {
-            const set = new Set(arr);
-            ALL_TOOLS.forEach(t => set.add(t));
-            return Array.from(set);
+          if (Array.isArray(arr) && arr.length === ALL_TOOLS.length) {
+            return arr;
           }
         }
+      } catch (_) {}
+      // 自己的测试项目默认全选所有工具 (25/25)，并自动覆写矫正本地历史旧缓存
+      try {
+        localStorage.setItem('tiamo_active_toolbar_tools', JSON.stringify(ALL_TOOLS));
       } catch (_) {}
       return [...ALL_TOOLS];
     }

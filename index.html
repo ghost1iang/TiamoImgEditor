@@ -83,23 +83,8 @@
        杜绝直接加载 TS 源码导致的假象与 MIME 异常，确保开箱即用。 -->
   <script>
     (function() {
-      var scriptUrl = './dist/tiamo-image-editor.umd.js';
-      try {
-        if (window.location.protocol.startsWith('http')) {
-          var xhr = new XMLHttpRequest();
-          xhr.open('HEAD', scriptUrl, false);
-          xhr.send();
-          if (xhr.status >= 200 && xhr.status < 400) {
-            var lastMod = xhr.getResponseHeader('Last-Modified');
-            if (lastMod) {
-              var t = new Date(lastMod).getTime();
-              if (t) scriptUrl += '?t=' + t;
-            }
-          }
-        }
-      } catch (e) {
-        // file:// 离线或跨域时安全忽略
-      }
+      // 动态时间戳彻底穿透浏览器缓存，确保加载最新构建产物
+      var scriptUrl = './dist/tiamo-image-editor.umd.js?v=' + Date.now();
       document.write('<script src="' + scriptUrl + '"><\/script>');
     })();
   </script>
@@ -110,7 +95,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- 工作台自适应样式 -->
-  <link rel="stylesheet" href="./css/workbench.css" />
+  <link rel="stylesheet" href="./css/workbench.css?v=1.6.6" />
 </head>
 <body>
 
@@ -366,7 +351,7 @@
           <span class="meta-tag">标准产物: tiamo-image-editor.umd.js</span>
         </div>
         <div class="download-btn-group">
-          <a href="./dist/tiamo-image-editor.umd.js" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
+          <a href="./dist/tiamo-image-editor.umd.js?v=1.6.6" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
