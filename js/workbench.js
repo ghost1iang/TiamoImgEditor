@@ -405,14 +405,10 @@
         const saved = localStorage.getItem('tiamo_active_toolbar_tools');
         if (saved) {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr) && arr.length === ALL_TOOLS.length) {
+          if (Array.isArray(arr) && arr.length > 0) {
             return arr;
           }
         }
-      } catch (_) {}
-      // 自己的测试项目默认全选所有工具 (25/25)，并自动覆写矫正本地历史旧缓存
-      try {
-        localStorage.setItem('tiamo_active_toolbar_tools', JSON.stringify(ALL_TOOLS));
       } catch (_) {}
       return [...ALL_TOOLS];
     }
@@ -425,6 +421,18 @@
       document.querySelectorAll('.modal-tool-cb').forEach(cb => {
         cb.checked = set.has(cb.value);
       });
+      document.querySelectorAll('.ssd-tool-cb').forEach(cb => {
+        cb.checked = set.has(cb.value);
+        const chip = cb.closest('.ssd-tool-chip');
+        if (chip) {
+          if (cb.checked) chip.classList.add('active');
+          else chip.classList.remove('active');
+        }
+      });
+      const ssdCount = document.getElementById('ssd-selected-count');
+      if (ssdCount) {
+        ssdCount.textContent = `已选 ${toolList.length}/${ALL_TOOLS.length}`;
+      }
       const tsdBadge = document.getElementById('tsd-count-badge');
       if (tsdBadge) {
         tsdBadge.textContent = `已显示 ${toolList.length}/${ALL_TOOLS.length}`;
@@ -554,33 +562,82 @@
         keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
       });
 
-      // 复制接入代码片段
+      // --------------------------------------------------
+      // 按钮与功能按需带入 SDK 定制
+      // --------------------------------------------------
+      safeOn('ssd-preset-all', 'click', () => saveAndApplyTools(ALL_TOOLS));
+      safeOn('ssd-preset-recommend', 'click', () => saveAndApplyTools(RECOMMEND_TOOLS));
+      safeOn('ssd-preset-cutout', 'click', () => saveAndApplyTools(CUTOUT_TOOLS));
+      safeOn('ssd-preset-transform', 'click', () => saveAndApplyTools(TRANSFORM_TOOLS));
+      safeOn('ssd-preset-clear', 'click', () => saveAndApplyTools(['settings']));
+
+      document.querySelectorAll('.ssd-tool-cb').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checked = Array.from(document.querySelectorAll('.ssd-tool-cb:checked')).map(c => c.value);
+          saveAndApplyTools(checked);
+        });
+      });
+
+      // 操作按钮（完成/取消）定制
+      const cbComplete = document.getElementById('ssd-action-complete');
+      const cbCancel = document.getElementById('ssd-action-cancel');
+      if (cbComplete) {
+        const savedComplete = localStorage.getItem('tiamo_sdk_pref_complete');
+        cbComplete.checked = savedComplete !== 'false';
+        const chip = cbComplete.closest('.ssd-tool-chip');
+        if (chip) chip.classList.toggle('active', cbComplete.checked);
+        cbComplete.addEventListener('change', () => {
+          if (chip) chip.classList.toggle('active', cbComplete.checked);
+          try {
+            localStorage.setItem('tiamo_sdk_pref_complete', cbComplete.checked ? 'true' : 'false');
+          } catch (_) {}
+        });
+      }
+
+      if (cbCancel) {
+        const savedCancel = localStorage.getItem('tiamo_sdk_pref_cancel');
+        cbCancel.checked = savedCancel !== 'false';
+        const chip = cbCancel.closest('.ssd-tool-chip');
+        if (chip) chip.classList.toggle('active', cbCancel.checked);
+        cbCancel.addEventListener('change', () => {
+          if (chip) chip.classList.toggle('active', cbCancel.checked);
+          try {
+            localStorage.setItem('tiamo_sdk_pref_cancel', cbCancel.checked ? 'true' : 'false');
+          } catch (_) {}
+        });
+      }
+
+      // 复制接入代码片段 (动态携带当前勾选的按钮功能)
       safeOn('btn-ssd-copy-snippet', 'click', async () => {
         const selectedMode = (document.querySelector('input[name="ssd-mode"]:checked') || {}).value || 'distributed';
         const selectedFormat = (document.querySelector('input[name="ssd-format"]:checked') || {}).value || 'blob';
         const useShadow = (document.getElementById('ssd-use-shadow') || {}).checked || false;
+        const selectedTools = Array.from(document.querySelectorAll('.ssd-tool-cb:checked')).map(cb => cb.value);
+        const showComplete = cbComplete ? cbComplete.checked : true;
+        const showCancel = cbCancel ? cbCancel.checked : true;
+
+        const toolsCode = JSON.stringify(selectedTools, null, 4).replace(/\n/g, '\n    ');
 
         let snippet = '';
         if (selectedMode === 'distributed') {
-          snippet = `// 分布式工作台挂载模式 (宿主自定义布局)\nconst result = await TiamoImageEditor.distributed(\n  '#your-toolbar-container',\n  '#your-canvas-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    onComplete: (res) => console.log('编辑完成:', res)\n  }\n);`;
+          snippet = `// 分布式工作台挂载模式 (宿主自定义布局)\nconst result = await TiamoImageEditor.distributed(\n  '#your-toolbar-container',\n  '#your-canvas-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    showComplete: ${showComplete},\n    showCancel: ${showCancel},\n    visibleTools: ${toolsCode},\n    onComplete: (res) => console.log('编辑完成:', res)\n  }\n);`;
         } else if (selectedMode === 'modal') {
-          snippet = `// 全屏居中弹窗模式 (一键调起)\nconst result = await TiamoImageEditor.edit(imageSource, {\n  mode: 'modal',\n  outputType: '${selectedFormat}',\n  useShadowDOM: ${useShadow}\n});`;
+          snippet = `// 全屏居中弹窗模式 (一键调起)\nconst result = await TiamoImageEditor.edit(imageSource, {\n  mode: 'modal',\n  outputType: '${selectedFormat}',\n  useShadowDOM: ${useShadow},\n  showComplete: ${showComplete},\n  showCancel: ${showCancel},\n  visibleTools: ${toolsCode}\n});`;
         } else {
-          snippet = `// 紧凑胶囊工具条模式 (悬浮胶囊)\nconst result = await TiamoImageEditor.toolbar(\n  '#your-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow}\n  }\n);`;
+          snippet = `// 紧凑胶囊工具条模式 (悬浮胶囊)\nconst result = await TiamoImageEditor.toolbar(\n  '#your-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    showComplete: ${showComplete},\n    showCancel: ${showCancel},\n    visibleTools: ${toolsCode}\n  }\n);`;
         }
 
         const ok = await copyText(snippet);
-        if (ok) showToast('已成功复制当前配置的 SDK 接入调用代码！');
+        if (ok) showToast('已成功复制携带自定义按钮的 SDK 接入调用代码！');
       });
 
       // 打开接入中心
       safeOn('btn-ssd-open-docs', 'click', () => {
         ssdDropdown.classList.remove('active');
         btnSystemSettings.classList.remove('active');
-        const modal = document.getElementById('modal-developer-center');
+        const modal = document.getElementById('sdk-modal-overlay');
         if (modal) {
           modal.classList.add('active');
-          document.body.style.overflow = 'hidden';
         }
       });
     }
@@ -625,8 +682,8 @@
     // ----------------------------------------------------
     function initApp() {
       syncVersionUI();
-      // 自己的测试项目默认全选所有工具
-      saveAndApplyTools(ALL_TOOLS);
+      const initialTools = getSavedVisibleTools();
+      saveAndApplyTools(initialTools);
       mountMainWorkspace(null);
     }
 

@@ -229,7 +229,87 @@
             </div>
           </div>
 
-          <!-- 2. 输出结果格式 -->
+          <!-- 2. 带入 SDK 的按钮与功能定制 -->
+          <div class="ssd-section">
+            <div class="ssd-tools-header">
+              <div class="ssd-section-label">带入 SDK 的按钮与功能</div>
+              <span class="ssd-count-badge" id="ssd-selected-count">已选 25/25</span>
+            </div>
+            <div class="ssd-quick-presets">
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (25)</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-recommend">常用推荐</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-cutout">纯抠图</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-transform">几何旋转</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-clear">清空</button>
+            </div>
+            <div class="ssd-tools-scrollbox" id="ssd-tools-scrollbox">
+              <!-- 选区工具组 (6) -->
+              <div class="ssd-group-block">
+                <div class="ssd-group-label">选区工具组</div>
+                <div class="ssd-tool-chips">
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="rect" checked /><span>矩形范围</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="cropAuto" checked /><span>智能修边</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="lasso" checked /><span>索套范围</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="quad" checked /><span>多边范围</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="invert" checked /><span>反选选区</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="clear" checked /><span>清除选区</span></label>
+                </div>
+              </div>
+              <!-- 魔棒抠图组 (4) -->
+              <div class="ssd-group-block">
+                <div class="ssd-group-label">魔棒抠图组</div>
+                <div class="ssd-tool-chips">
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="alphaMask" checked /><span>透明检测</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="wand" checked /><span>魔棒选色</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="wandMode" checked /><span>全屏/连通</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="tolerance" checked /><span>容差调节</span></label>
+                </div>
+              </div>
+              <!-- 色彩吸管组 (2) -->
+              <div class="ssd-group-block">
+                <div class="ssd-group-label">色彩吸管组</div>
+                <div class="ssd-tool-chips">
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="colorPicker" checked /><span>调色板</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="pipette" checked /><span>吸管取色</span></label>
+                </div>
+              </div>
+              <!-- 剪裁擦除组 (4) -->
+              <div class="ssd-group-block">
+                <div class="ssd-group-label">剪裁擦除组</div>
+                <div class="ssd-tool-chips">
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="crop" checked /><span>按区剪裁</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="fill" checked /><span>选区着色</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="erase" checked /><span>选区擦除</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="hd" checked /><span>稀疏高清</span></label>
+                </div>
+              </div>
+              <!-- 旋转校正组 (8) -->
+              <div class="ssd-group-block">
+                <div class="ssd-group-label">旋转校正组</div>
+                <div class="ssd-tool-chips">
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="flipH" checked /><span>水平镜像</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="flipV" checked /><span>垂直镜像</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="rotateCcw" checked /><span>逆时针90°</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="rotateCw" checked /><span>顺时针90°</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="rotateAny" checked /><span>自由旋转</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="ortho" checked /><span>矩形正交化</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="orthoAuto" checked /><span>智能寻角</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="deShadow" checked /><span>白化去影</span></label>
+                </div>
+              </div>
+              <!-- 辅助与动作 (3) -->
+              <div class="ssd-group-block">
+                <div class="ssd-group-label">辅助与操作按钮</div>
+                <div class="ssd-tool-chips">
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="settings" checked /><span>工具栏设置</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" id="ssd-action-complete" checked /><span>完成/导出</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" id="ssd-action-cancel" checked /><span>取消/退出</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. 输出结果格式 -->
           <div class="ssd-section">
             <div class="ssd-section-label">输出结果格式 (Output Format)</div>
             <div class="ssd-grid-3">
