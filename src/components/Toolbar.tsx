@@ -21,7 +21,8 @@ import {
   Wand2,
   Settings,
   Scan,
-  Focus
+  Focus,
+  SunMedium
 } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
 import { ToolbarToolId, resolveVisibleTools } from '../types/toolbar';
@@ -258,6 +259,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     sampledColor,
     handleCropTransparency,
     handleAutoDetectOrtho,
+    handleApplyDeShadow,
     fillColor,
     setFillColor,
     hasSelection,
@@ -467,7 +469,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     visibleTools.has('rotateCw') || 
     visibleTools.has('rotateAny') ||
     visibleTools.has('ortho') ||
-    visibleTools.has('orthoAuto');
+    visibleTools.has('orthoAuto') ||
+    visibleTools.has('deShadow');
 
   // 载入图片后，工具栏与其包含的全部SDK按钮（含工具栏设置）才一并出现
   if (!currentImage) {
@@ -794,7 +797,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   </button>
                 )}
 
-                {((visibleTools.has('rotateCcw') || visibleTools.has('rotateCw') || visibleTools.has('rotateAny') || visibleTools.has('flipH') || visibleTools.has('flipV')) && (visibleTools.has('ortho') || visibleTools.has('orthoAuto'))) && (
+                {((visibleTools.has('rotateCcw') || visibleTools.has('rotateCw') || visibleTools.has('rotateAny') || visibleTools.has('flipH') || visibleTools.has('flipV')) && (visibleTools.has('ortho') || visibleTools.has('orthoAuto') || visibleTools.has('deShadow'))) && (
                   <div className={`w-px h-3 mx-0.5 ${isCompact ? 'bg-slate-700' : 'bg-slate-300'}`} />
                 )}
 
@@ -829,6 +832,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     title="智能寻角 (自动识别画面矩形物体的4个推荐顶点并进入正交模式)"
                   >
                     <Focus size={12} strokeWidth={2.5} />
+                  </button>
+                )}
+
+                {/* 白化去影净化按钮 */}
+                {visibleTools.has('deShadow') && (
+                  <button 
+                    onClick={handleApplyDeShadow} 
+                    disabled={isLoading}
+                    className={`flex items-center gap-1 px-1.5 py-1 rounded-md transition-all ${
+                      isCompact 
+                        ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                        : 'text-slate-500 hover:bg-white hover:text-amber-600'
+                    }`} 
+                    title="白化去影 (光照估计除法消除拍摄纸张的不均匀阴影与暗角，平底白化并保留彩色文字与印章)"
+                  >
+                    <SunMedium size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold">去阴影</span>
                   </button>
                 )}
               </div>

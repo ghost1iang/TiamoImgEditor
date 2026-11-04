@@ -383,12 +383,12 @@
       'rect', 'cropAuto', 'lasso', 'quad', 'invert', 'clear',
       'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase',
       'colorPicker', 'pipette', 'crop', 'fill', 'hd',
-      'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny', 'ortho',
+      'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ];
     const RECOMMEND_TOOLS = [
       'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho',
+      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ];
     const CUTOUT_TOOLS = [
@@ -397,7 +397,7 @@
     ];
     const TRANSFORM_TOOLS = [
       'rect', 'cropAuto', 'quad', 'flipH', 'flipV', 'rotateCcw', 
-      'rotateCw', 'rotateAny', 'ortho', 'settings'
+      'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow', 'settings'
     ];
 
     function getSavedVisibleTools() {
@@ -405,10 +405,14 @@
         const saved = localStorage.getItem('tiamo_active_toolbar_tools');
         if (saved) {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr) && arr.length > 0) return arr;
+          if (Array.isArray(arr) && arr.length > 0) {
+            const set = new Set(arr);
+            ALL_TOOLS.forEach(t => set.add(t));
+            return Array.from(set);
+          }
         }
       } catch (_) {}
-      return ALL_TOOLS;
+      return [...ALL_TOOLS];
     }
 
     function saveAndApplyTools(toolList) {
@@ -619,7 +623,8 @@
     // ----------------------------------------------------
     function initApp() {
       syncVersionUI();
-      saveAndApplyTools(getSavedVisibleTools());
+      // 自己的测试项目默认全选所有工具
+      saveAndApplyTools(ALL_TOOLS);
       mountMainWorkspace(null);
     }
 

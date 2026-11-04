@@ -25,7 +25,8 @@ import {
   Settings,
   Sparkles,
   Scan,
-  Focus
+  Focus,
+  SunMedium
 } from 'lucide-react';
 import { 
   ToolbarToolId, 
@@ -60,6 +61,7 @@ const TOOL_ICONS: Record<ToolbarToolId, React.ReactNode> = {
   rotateAny: <Compass size={13} />,
   ortho: <Scan size={13} />,
   orthoAuto: <Focus size={13} />,
+  deShadow: <SunMedium size={13} />,
   settings: <Settings size={13} />,
 };
 
@@ -91,7 +93,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   const applyRecommended = () => {
     onSetTools([
       'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto',
+      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ]);
   };

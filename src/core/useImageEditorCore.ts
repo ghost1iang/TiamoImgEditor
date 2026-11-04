@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SDK_VERSION } from '../version';
 import { executeSparseHdReconstruction } from './algorithms/sparseHd';
 import { calculateOrthoTargetDimensions, performPerspectiveOrthogonalization, detectOrthoQuadCorners } from './algorithms/ortho';
+import { performDocumentShadowRemoval } from './algorithms/deShadow';
 import { isInsideLockedRegion, processUniversalDeSpill } from './algorithms/wand';
 import { findNonTransparentBounds } from './algorithms/crop';
 
@@ -1075,6 +1076,36 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     }, 50);
   };
 
+  /**
+   * 白化去影净化：基于光照估计除法消除拍摄纸张的不均匀阴影与暗角
+   */
+  const handleApplyDeShadow = () => {
+    if (!imageRef.current || !currentImage) return;
+    setIsLoading(true);
+    setTimeout(() => {
+      try {
+        const resCanvas = performDocumentShadowRemoval(imageRef.current!);
+        const resUrl = resCanvas.toDataURL('image/png');
+        const rec: HistoryRecord = {
+          id: Date.now(),
+          url: resUrl,
+          prompt: "纸张白化去影",
+          timestamp: new Date().toLocaleTimeString(),
+          width: resCanvas.width,
+          height: resCanvas.height,
+        };
+        setHistory(prev => [rec, ...prev]);
+        setCurrentImage(resUrl);
+        setActiveRecord(rec);
+      } catch (err: any) {
+        console.error('[DeShadow Error]', err);
+        setErrorMessage(`去阴影失败: ${err?.message || err}`);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 50);
+  };
+
   const handleApplyQuadCrop = () => {
     if (!quadPoints || !currentImage || !imageRef.current) return;
     setIsLoading(true);
@@ -1569,6 +1600,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     orthoMagnifier,
     handleApplyOrtho,
     handleAutoDetectOrtho,
+    handleApplyDeShadow,
     handleResetOrthoPoints,
     quadPoints,
     setQuadPoints,
