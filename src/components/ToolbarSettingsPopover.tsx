@@ -26,7 +26,8 @@ import {
   Sparkles,
   Scan,
   Focus,
-  SunMedium
+  SunMedium,
+  CircleDot
 } from 'lucide-react';
 import { 
   ToolbarToolId, 
@@ -48,6 +49,7 @@ const TOOL_ICONS: Record<ToolbarToolId, React.ReactNode> = {
   wand: <Wand2 size={13} />,
   wandMode: <Sliders size={13} />,
   tolerance: <SlidersHorizontal size={13} />,
+  spillRadius: <CircleDot size={13} />,
   erase: <Eraser size={13} />,
   colorPicker: <Palette size={13} />,
   pipette: <Pipette size={13} />,
@@ -70,6 +72,7 @@ interface ToolbarSettingsPopoverProps {
   onToggleTool: (id: ToolbarToolId) => void;
   onSetTools: (tools: ToolbarToolId[]) => void;
   onClose: () => void;
+  top: number;
   left: number;
   arrowOffset: number;
   popoverRef: React.RefObject<HTMLDivElement>;
@@ -81,6 +84,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   onToggleTool,
   onSetTools,
   onClose,
+  top,
   left,
   arrowOffset,
   popoverRef,
@@ -92,7 +96,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   // 常用精简推荐方案
   const applyRecommended = () => {
     onSetTools([
-      'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
+      'rect', 'cropAuto', 'wand', 'tolerance', 'spillRadius', 'erase', 
       'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ]);
@@ -101,7 +105,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   // 抠图极简方案
   const applyCutoutOnly = () => {
     onSetTools([
-      'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase', 
+      'alphaMask', 'wand', 'wandMode', 'tolerance', 'spillRadius', 'erase', 
       'crop', 'settings'
     ]);
   };
@@ -110,12 +114,12 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
     <div
       ref={popoverRef}
       style={{
-        position: 'absolute',
-        top: 'calc(100% + 8px)',
+        position: 'fixed',
+        top: `${top}px`,
         left: `${left}px`,
         width: '360px',
         maxWidth: '92vw',
-        zIndex: 9999,
+        zIndex: 1000000,
       }}
       className={`select-none p-3.5 animate-in fade-in zoom-in-95 duration-150 rounded-2xl shadow-2xl backdrop-blur-xl border ${
         isCompact

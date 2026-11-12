@@ -15,6 +15,7 @@ export type ToolbarToolId =
   | 'wand'          // 魔棒选色
   | 'wandMode'      // 选色模式(全屏/连通)
   | 'tolerance'     // 容差滑块
+  | 'spillRadius'   // 影响范围
   | 'erase'         // 橡皮擦除
   // 色彩与吸管
   | 'colorPicker'   // 调色板
@@ -76,6 +77,7 @@ export const ALL_TOOLBAR_TOOLS: ToolbarToolDef[] = [
   { id: 'wand', name: '魔棒选色', shortName: '魔棒', category: 'cutout', description: '点击图片自动智能分析并选中同类色块', defaultVisible: true },
   { id: 'wandMode', name: '选色模式', shortName: '全屏/连通', category: 'cutout', description: '切换魔棒为全屏颜色匹配或连续区域漫水', defaultVisible: true },
   { id: 'tolerance', name: '容差滑块', shortName: '容差调节', category: 'cutout', description: '1~255 范围内平滑调节魔棒选色容差度', defaultVisible: true },
+  { id: 'spillRadius', name: '影响范围', shortName: '范围', category: 'cutout', description: '调节魔棒擦除时边缘去色边的像素影响范围 (1~Max px 或全图)', defaultVisible: true },
 
   // 3. 色彩与吸管
   { id: 'colorPicker', name: '着色调色板', shortName: '调色板', category: 'color', description: '选取选区着色与画笔填充的目标颜色', defaultVisible: true },

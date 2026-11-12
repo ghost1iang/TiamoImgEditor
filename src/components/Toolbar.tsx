@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Square, 
   Pencil, 
@@ -22,7 +23,8 @@ import {
   Settings,
   Scan,
   Focus,
-  SunMedium
+  SunMedium,
+  CircleDot
 } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
 import { ToolbarToolId, resolveVisibleTools } from '../types/toolbar';
@@ -33,6 +35,7 @@ interface RotationPopoverProps {
   onChange: (a: number) => void;
   onApply: () => void;
   onReset: () => void;
+  top: number;
   left: number;
   arrowOffset: number;
   popoverRef: React.RefObject<HTMLDivElement>;
@@ -44,6 +47,7 @@ const RotationPopover: React.FC<RotationPopoverProps> = ({
   onChange,
   onApply,
   onReset,
+  top,
   left,
   arrowOffset,
   popoverRef,
@@ -57,10 +61,10 @@ const RotationPopover: React.FC<RotationPopoverProps> = ({
     <div
       ref={popoverRef}
       style={{
-        position: 'absolute',
-        top: 'calc(100% + 8px)',
+        position: 'fixed',
+        top: `${top}px`,
         left: `${left}px`,
-        zIndex: 99999,
+        zIndex: 1000000,
       }}
       className={`w-[264px] rounded-2xl shadow-2xl p-3 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 select-none backdrop-blur-xl ${
         isCompact 
@@ -210,6 +214,171 @@ const RotationPopover: React.FC<RotationPopoverProps> = ({
   );
 };
 
+interface SpillRadiusPopoverProps {
+  radius: number;
+  maxRadius: number;
+  onChange: (r: number) => void;
+  onClose: () => void;
+  top: number;
+  left: number;
+  arrowOffset: number;
+  popoverRef: React.RefObject<HTMLDivElement>;
+  isCompact?: boolean;
+}
+
+const SpillRadiusPopover: React.FC<SpillRadiusPopoverProps> = ({
+  radius,
+  maxRadius,
+  onChange,
+  onClose,
+  top,
+  left,
+  arrowOffset,
+  popoverRef,
+  isCompact = false,
+}) => {
+  const isAll = radius >= maxRadius;
+
+  return (
+    <div
+      ref={popoverRef}
+      style={{
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        zIndex: 1000000,
+      }}
+      className={`w-[270px] rounded-2xl shadow-2xl p-3 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 select-none backdrop-blur-xl ${
+        isCompact 
+          ? 'bg-slate-900/95 text-white border border-slate-700/80' 
+          : 'bg-white/95 text-slate-800 border border-slate-200/90 shadow-slate-900/10'
+      }`}
+    >
+      {/* 顶部小箭头对齐按钮 */}
+      <div
+        className={`absolute -top-1 w-2.5 h-2.5 border-t border-l ${
+          isCompact 
+            ? 'bg-slate-900 border-slate-700/80' 
+            : 'bg-white border-slate-200'
+        }`}
+        style={{
+          left: `${Math.max(14, Math.min(arrowOffset, 256))}px`,
+          transform: 'translateX(-50%) rotate(45deg)',
+        }}
+      />
+
+      {/* 头部标题与关闭 */}
+      <div className={`w-full flex items-center justify-between pb-1 border-b text-xs font-bold ${
+        isCompact ? 'border-slate-800 text-slate-300' : 'border-slate-100 text-slate-700'
+      }`}>
+        <span className="flex items-center gap-1.5 text-indigo-600">
+          <CircleDot size={13} />
+          <span>去色边影响范围</span>
+        </span>
+        <button
+          onClick={onClose}
+          className={`p-0.5 rounded transition-colors ${
+            isCompact ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'
+          }`}
+          title="关闭"
+        >
+          <X size={13} />
+        </button>
+      </div>
+
+      {/* 快捷档位预设 */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onChange(1)}
+          className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${
+            radius === 1
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : isCompact
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+          }`}
+          title="微羽化边缘（1像素）"
+        >
+          1 像素
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(3)}
+          className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${
+            radius === 3
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : isCompact
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+          }`}
+          title="标准去绿边推荐（3像素）"
+        >
+          3 像素 (推荐)
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(maxRadius)}
+          className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-all ${
+            isAll
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : isCompact
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+          }`}
+          title="全图所有同色相像素（Max）"
+        >
+          全图 (Max)
+        </button>
+      </div>
+
+      {/* 拉把滑块控制 */}
+      <div className="flex flex-col gap-1 px-0.5">
+        <div className="flex items-center justify-between text-[10px] text-slate-400">
+          <span>拉把调节 (1 ~ {maxRadius}px)</span>
+          <span className="font-mono text-indigo-500 font-bold">{isAll ? '全图' : `${radius}px`}</span>
+        </div>
+        <input
+          type="range"
+          min="1"
+          max={maxRadius}
+          value={Math.min(radius, maxRadius)}
+          onChange={(e) => onChange(parseInt(e.target.value) || 1)}
+          className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+        />
+      </div>
+
+      {/* 直接输入框 */}
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <span className="text-[11px] text-slate-500 font-medium">直接输入数值:</span>
+        <div className={`flex items-center border rounded-lg px-2 py-0.5 ${
+          isCompact ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+        }`}>
+          <input
+            type="number"
+            min="0"
+            max={maxRadius}
+            value={radius}
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              onChange(isNaN(val) ? 0 : Math.max(0, Math.min(maxRadius, val)));
+            }}
+            className="w-16 text-[12px] font-black text-center bg-transparent outline-none"
+          />
+          <span className="text-[10px] text-slate-400 font-bold">px</span>
+        </div>
+      </div>
+
+      {/* 提示文案 */}
+      <div className="text-[9px] text-slate-400 leading-tight border-t border-slate-100 dark:border-slate-800 pt-1.5">
+        {isAll
+          ? '⚠️ 当前为全图模式，全屏所有符合色相特征的像素均会受到消色边影响。'
+          : `✅ 橡皮擦擦除时，仅对交界处外沿 ${radius} 像素过渡带消解背景溢色，保护主体内部颜色不受影响。`}
+      </div>
+    </div>
+  );
+};
+
 export interface ToolbarProps {
   core: ImageEditorCore;
   mode?: 'modal' | 'toolbar' | 'distributed';
@@ -253,10 +422,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     setSelectionMode,
     tolerance,
     setTolerance,
+    spillRadius,
+    setSpillRadius,
     deSpillGreen,
     setDeSpillGreen,
     applyDeSpillGreen,
     sampledColor,
+    imageRef,
     handleCropTransparency,
     handleAutoDetectOrtho,
     handleApplyDeShadow,
@@ -342,17 +514,30 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   }, []);
 
   // ----------------------------------------------------
-  // 2. 旋转浮窗与设置浮窗定位控制
+  // 2. 旋转浮窗与设置浮窗定位控制 (Portal + Fixed 视口坐标，彻底突破宿主 overflow/backdrop-filter 裁剪)
   // ----------------------------------------------------
   const toolbarRef = useRef<HTMLDivElement>(null);
   const rotateBtnRef = useRef<HTMLButtonElement>(null);
   const rotatePopoverRef = useRef<HTMLDivElement>(null);
-  const [rotatePopoverPos, setRotatePopoverPos] = useState<{ left: number; arrowOffset: number }>({ left: 0, arrowOffset: 130 });
+  const [rotatePopoverPos, setRotatePopoverPos] = useState<{ top: number; left: number; arrowOffset: number }>({ top: 0, left: 0, arrowOffset: 130 });
 
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
   const settingsPopoverRef = useRef<HTMLDivElement>(null);
   const [showSettingsPopover, setShowSettingsPopover] = useState(false);
-  const [settingsPopoverPos, setSettingsPopoverPos] = useState<{ left: number; arrowOffset: number }>({ left: 0, arrowOffset: 160 });
+  const [settingsPopoverPos, setSettingsPopoverPos] = useState<{ top: number; left: number; arrowOffset: number }>({ top: 0, left: 0, arrowOffset: 160 });
+
+  const spillRadiusBtnRef = useRef<HTMLButtonElement>(null);
+  const spillRadiusPopoverRef = useRef<HTMLDivElement>(null);
+  const [showSpillRadiusPopover, setShowSpillRadiusPopover] = useState(false);
+  const [spillRadiusPopoverPos, setSpillRadiusPopoverPos] = useState<{ top: number; left: number; arrowOffset: number }>({ top: 0, left: 0, arrowOffset: 135 });
+
+  const getPopoverPortalTarget = (): HTMLElement => {
+    const root = toolbarRef.current?.getRootNode();
+    if (root && typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot) {
+      return (root.querySelector('div') as HTMLElement) || document.body;
+    }
+    return document.body;
+  };
 
   const handleToggleRotatePopover = () => {
     if (activeTool === 'rotate') {
@@ -362,47 +547,59 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
-  // 旋转浮窗位置自适应
+  // 旋转浮窗位置自适应 (基于视口 fixed 坐标 + 监听横向滚动)
   useEffect(() => {
-    if (activeTool === 'rotate' && rotateBtnRef.current && toolbarRef.current) {
+    if (activeTool === 'rotate' && rotateBtnRef.current) {
       const updatePos = () => {
-        const btnRect = rotateBtnRef.current!.getBoundingClientRect();
-        const tbRect = toolbarRef.current!.getBoundingClientRect();
+        if (!rotateBtnRef.current) return;
+        const btnRect = rotateBtnRef.current.getBoundingClientRect();
         const popoverWidth = 264;
-        const btnCenterX = (btnRect.left - tbRect.left) + btnRect.width / 2;
+        const viewportW = window.innerWidth || document.documentElement.clientWidth;
+        const btnCenterX = btnRect.left + btnRect.width / 2;
         let left = btnCenterX - popoverWidth / 2;
-        const maxLeft = Math.max(8, tbRect.width - popoverWidth - 8);
+        const maxLeft = Math.max(8, viewportW - popoverWidth - 8);
         left = Math.max(8, Math.min(left, maxLeft));
         setRotatePopoverPos({
+          top: btnRect.bottom + 8,
           left,
           arrowOffset: btnCenterX - left,
         });
       };
       updatePos();
       window.addEventListener('resize', updatePos);
-      return () => window.removeEventListener('resize', updatePos);
+      window.addEventListener('scroll', updatePos, true);
+      return () => {
+        window.removeEventListener('resize', updatePos);
+        window.removeEventListener('scroll', updatePos, true);
+      };
     }
   }, [activeTool]);
 
-  // 设置浮窗位置自适应
+  // 设置浮窗位置自适应 (基于视口 fixed 坐标 + 监听横向滚动)
   useEffect(() => {
-    if (showSettingsPopover && settingsBtnRef.current && toolbarRef.current) {
+    if (showSettingsPopover && settingsBtnRef.current) {
       const updatePos = () => {
-        const btnRect = settingsBtnRef.current!.getBoundingClientRect();
-        const tbRect = toolbarRef.current!.getBoundingClientRect();
-        const popoverWidth = 360;
-        const btnCenterX = (btnRect.left - tbRect.left) + btnRect.width / 2;
+        if (!settingsBtnRef.current) return;
+        const btnRect = settingsBtnRef.current.getBoundingClientRect();
+        const popoverWidth = Math.min(360, (window.innerWidth || 360) * 0.92);
+        const viewportW = window.innerWidth || document.documentElement.clientWidth;
+        const btnCenterX = btnRect.left + btnRect.width / 2;
         let left = btnCenterX - popoverWidth / 2;
-        const maxLeft = Math.max(8, tbRect.width - popoverWidth - 8);
+        const maxLeft = Math.max(8, viewportW - popoverWidth - 8);
         left = Math.max(8, Math.min(left, maxLeft));
         setSettingsPopoverPos({
+          top: btnRect.bottom + 8,
           left,
           arrowOffset: btnCenterX - left,
         });
       };
       updatePos();
       window.addEventListener('resize', updatePos);
-      return () => window.removeEventListener('resize', updatePos);
+      window.addEventListener('scroll', updatePos, true);
+      return () => {
+        window.removeEventListener('resize', updatePos);
+        window.removeEventListener('scroll', updatePos, true);
+      };
     }
   }, [showSettingsPopover]);
 
@@ -443,6 +640,52 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     return () => window.removeEventListener('pointerdown', handlePointerDown);
   }, [showSettingsPopover]);
 
+  // 影响范围浮窗位置自适应 (基于视口 fixed 坐标 + 监听横向滚动)
+  useEffect(() => {
+    if (showSpillRadiusPopover && spillRadiusBtnRef.current) {
+      const updatePos = () => {
+        if (!spillRadiusBtnRef.current) return;
+        const btnRect = spillRadiusBtnRef.current.getBoundingClientRect();
+        const popoverWidth = 270;
+        const viewportW = window.innerWidth || document.documentElement.clientWidth;
+        const btnCenterX = btnRect.left + btnRect.width / 2;
+        let left = btnCenterX - popoverWidth / 2;
+        const maxLeft = Math.max(8, viewportW - popoverWidth - 8);
+        left = Math.max(8, Math.min(left, maxLeft));
+        setSpillRadiusPopoverPos({
+          top: btnRect.bottom + 8,
+          left,
+          arrowOffset: btnCenterX - left,
+        });
+      };
+      updatePos();
+      window.addEventListener('resize', updatePos);
+      window.addEventListener('scroll', updatePos, true);
+      return () => {
+        window.removeEventListener('resize', updatePos);
+        window.removeEventListener('scroll', updatePos, true);
+      };
+    }
+  }, [showSpillRadiusPopover]);
+
+  // 点击外部关闭影响范围浮窗
+  useEffect(() => {
+    if (!showSpillRadiusPopover) return;
+
+    const handlePointerDown = (e: MouseEvent | PointerEvent) => {
+      const path = (e.composedPath ? e.composedPath() : []) as Node[];
+      const inPopover = spillRadiusPopoverRef.current && (path.includes(spillRadiusPopoverRef.current) || spillRadiusPopoverRef.current.contains(e.target as Node));
+      const inBtn = spillRadiusBtnRef.current && (path.includes(spillRadiusBtnRef.current) || spillRadiusBtnRef.current.contains(e.target as Node));
+
+      if (!inPopover && !inBtn) {
+        setShowSpillRadiusPopover(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => window.removeEventListener('pointerdown', handlePointerDown);
+  }, [showSpillRadiusPopover]);
+
   // 计算各个分组是否有可见工具（用于整组容器的自适应渲染）
   const hasSelectionTools = 
     visibleTools.has('rect') || 
@@ -456,7 +699,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     visibleTools.has('alphaMask') || 
     visibleTools.has('wand') || 
     visibleTools.has('wandMode') || 
-    visibleTools.has('tolerance');
+    visibleTools.has('tolerance') ||
+    visibleTools.has('spillRadius');
+
+  const maxImgDimension = Math.max(
+    imageRef.current?.naturalWidth || 2000,
+    imageRef.current?.naturalHeight || 2000
+  );
 
   const hasColorTools = visibleTools.has('colorPicker') || visibleTools.has('pipette');
 
@@ -631,6 +880,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                       className="w-12 h-1 bg-slate-300 appearance-none cursor-pointer accent-indigo-600 rounded-lg" 
                     />
                   </div>
+                )}
+
+                {/* 影响范围按钮 (去色边过渡带半径) */}
+                {visibleTools.has('spillRadius') && (
+                  <button
+                    ref={spillRadiusBtnRef}
+                    type="button"
+                    onClick={() => setShowSpillRadiusPopover((v) => !v)}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 text-[8px] font-bold rounded transition-colors ${
+                      showSpillRadiusPopover
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : isCompact
+                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                    }`}
+                    title={`去色边影响范围: ${spillRadius >= maxImgDimension ? '全图' : `${spillRadius}px`}`}
+                  >
+                    <span>影响范围</span>
+                    <span className={`text-[7px] px-1 rounded font-black ${
+                      showSpillRadiusPopover
+                        ? 'bg-indigo-700 text-white'
+                        : isCompact
+                        ? 'bg-slate-800 text-indigo-400'
+                        : 'bg-slate-100 text-indigo-600 border border-indigo-100'
+                    }`}>
+                      {spillRadius >= maxImgDimension ? '全图' : `${spillRadius}px`}
+                    </span>
+                  </button>
                 )}
               </div>
             )}
@@ -890,8 +1167,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </div>
       )}
 
-      {/* 任意角度旋转控制浮窗 */}
-      {activeTool === 'rotate' && (
+      {/* 任意角度旋转控制浮窗 (Portal 脱离父级 overflow 裁剪) */}
+      {activeTool === 'rotate' && createPortal(
         <RotationPopover
           angle={rotationAngle}
           onChange={(val) => setRotationAngle(val)}
@@ -900,25 +1177,45 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             setRotationAngle(0);
             setActiveTool(null);
           }}
+          top={rotatePopoverPos.top}
           left={rotatePopoverPos.left}
           arrowOffset={rotatePopoverPos.arrowOffset}
           popoverRef={rotatePopoverRef}
           isCompact={isCompact}
-        />
+        />,
+        getPopoverPortalTarget()
       )}
 
-      {/* 工具栏按钮显示设置浮窗 (工具栏设置) */}
-      {showSettingsPopover && (
+      {/* 去色边影响范围控制浮窗 (Portal 脱离父级 overflow 裁剪) */}
+      {showSpillRadiusPopover && createPortal(
+        <SpillRadiusPopover
+          radius={spillRadius}
+          maxRadius={maxImgDimension}
+          onChange={(val) => setSpillRadius(val)}
+          onClose={() => setShowSpillRadiusPopover(false)}
+          top={spillRadiusPopoverPos.top}
+          left={spillRadiusPopoverPos.left}
+          arrowOffset={spillRadiusPopoverPos.arrowOffset}
+          popoverRef={spillRadiusPopoverRef}
+          isCompact={isCompact}
+        />,
+        getPopoverPortalTarget()
+      )}
+
+      {/* 工具栏按钮显示设置浮窗 (Portal 脱离父级 overflow 裁剪) */}
+      {showSettingsPopover && createPortal(
         <ToolbarSettingsPopover
           visibleTools={visibleTools}
           onToggleTool={handleToggleTool}
           onSetTools={handleSetTools}
           onClose={() => setShowSettingsPopover(false)}
+          top={settingsPopoverPos.top}
           left={settingsPopoverPos.left}
           arrowOffset={settingsPopoverPos.arrowOffset}
           popoverRef={settingsPopoverRef}
           isCompact={isCompact}
-        />
+        />,
+        getPopoverPortalTarget()
       )}
     </div>
   );

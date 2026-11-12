@@ -3,7 +3,7 @@ import { SDK_VERSION } from '../version';
 import { executeSparseHdReconstruction } from './algorithms/sparseHd';
 import { calculateOrthoTargetDimensions, performPerspectiveOrthogonalization, detectOrthoQuadCorners } from './algorithms/ortho';
 import { performDocumentShadowRemoval } from './algorithms/deShadow';
-import { isInsideLockedRegion, processUniversalDeSpill } from './algorithms/wand';
+import { isInsideLockedRegion, processUniversalDeSpill, processLocalDeSpill } from './algorithms/wand';
 import { findNonTransparentBounds } from './algorithms/crop';
 
 export interface HistoryRecord {
@@ -73,6 +73,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
   const [lastClickPos, setLastClickPos] = useState<{ x: number; y: number; isAdding: boolean } | null>(null); 
   const [fillColor, setFillColor] = useState<string>("#3b82f6"); 
   const [deSpillGreen, setDeSpillGreen] = useState<boolean>(true); // 智能去色边开关
+  const [spillRadius, setSpillRadius] = useState<number>(3); // 智能去色边影响范围 (默认 3 像素边缘邻域)
   const [sampledColor, setSampledColor] = useState<{ r: number; g: number; b: number; a: number } | null>(null); // 魔棒当前吸附的背景色
 
   // 变换与多边形状态
@@ -1325,7 +1326,17 @@ export function useImageEditorCore(options: CoreOptions = {}) {
 
     const imgDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgDataObj.data;
-    const modified = processUniversalDeSpill(data, sampledColor, tolerance);
+    const modified = maskCanvas
+      ? processLocalDeSpill(
+          data,
+          canvas.width,
+          canvas.height,
+          maskCanvas.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data || new Uint8ClampedArray(canvas.width * canvas.height * 4),
+          sampledColor,
+          tolerance,
+          spillRadius
+        )
+      : processUniversalDeSpill(data, sampledColor, tolerance);
 
     if (modified) {
       ctx.putImageData(imgDataObj, 0, 0);
@@ -1388,8 +1399,10 @@ export function useImageEditorCore(options: CoreOptions = {}) {
           }
         }
 
-        // 默认自动开启全色相智能去溢色算法
-        processUniversalDeSpill(data, sampledColor, tolerance);
+        // 方案A智能去溢色：遵循设定的边缘影响范围 (spillRadius)，避免影响全图
+        if (spillRadius > 0) {
+          processLocalDeSpill(data, nw, nh, maskData, sampledColor, tolerance, spillRadius);
+        }
         ctx.putImageData(imgDataObj, 0, 0);
       }
     }
@@ -1579,6 +1592,8 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     setTolerance,
     deSpillGreen,
     setDeSpillGreen,
+    spillRadius,
+    setSpillRadius,
     applyDeSpillGreen,
     sampledColor,
     setSampledColor,

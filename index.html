@@ -95,7 +95,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- 工作台自适应样式 -->
-  <link rel="stylesheet" href="./css/workbench.css?v=1.6.6" />
+  <link rel="stylesheet" href="./css/workbench.css?v=1.6.9" />
 </head>
 <body>
 
@@ -233,10 +233,10 @@
           <div class="ssd-section">
             <div class="ssd-tools-header">
               <div class="ssd-section-label">带入 SDK 的按钮与功能</div>
-              <span class="ssd-count-badge" id="ssd-selected-count">已选 25/25</span>
+              <span class="ssd-count-badge" id="ssd-selected-count">已选 26/26</span>
             </div>
             <div class="ssd-quick-presets">
-              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (25)</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (26)</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-recommend">常用推荐</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-cutout">纯抠图</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-transform">几何旋转</button>
@@ -255,7 +255,7 @@
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="clear" checked /><span>清除选区</span></label>
                 </div>
               </div>
-              <!-- 魔棒抠图组 (4) -->
+              <!-- 魔棒抠图组 (5) -->
               <div class="ssd-group-block">
                 <div class="ssd-group-label">魔棒抠图组</div>
                 <div class="ssd-tool-chips">
@@ -263,6 +263,7 @@
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="wand" checked /><span>魔棒选色</span></label>
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="wandMode" checked /><span>全屏/连通</span></label>
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="tolerance" checked /><span>容差调节</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="spillRadius" checked /><span>影响范围</span></label>
                 </div>
               </div>
               <!-- 色彩吸管组 (2) -->
@@ -431,7 +432,7 @@
           <span class="meta-tag">标准产物: tiamo-image-editor.umd.js</span>
         </div>
         <div class="download-btn-group">
-          <a href="./dist/tiamo-image-editor.umd.js?v=1.6.6" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
+          <a href="./dist/tiamo-image-editor.umd.js?v=1.6.9" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
@@ -558,7 +559,7 @@
                 <div style="font-size:0.78rem;color:#64748b;">预设常见场景或自定义勾选，实时生成 <code>visibleTools</code> 配置参数代码</div>
               </div>
               <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
-                <button class="top-action-btn" id="modal-preset-all">全部显示 (23)</button>
+                <button class="top-action-btn" id="modal-preset-all">全部显示 (26)</button>
                 <button class="top-action-btn" id="modal-preset-recommend">常用推荐 (12)</button>
                 <button class="top-action-btn" id="modal-preset-cutout">纯抠图方案 (7)</button>
                 <button class="top-action-btn" id="modal-preset-transform">几何与旋转 (9)</button>
@@ -585,6 +586,7 @@
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="wand" checked /><span>魔棒选色</span></label>
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="wandMode" checked /><span>全屏/连通</span></label>
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="tolerance" checked /><span>容差调节</span></label>
+                <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="spillRadius" checked /><span>影响范围</span></label>
               </div>
               <!-- 分组 3 -->
               <div class="tools-group">

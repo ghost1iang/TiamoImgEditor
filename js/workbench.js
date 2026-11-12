@@ -113,6 +113,7 @@
             showCancel: false,
             visibleTools: getSavedVisibleTools(),
             rejectOnCancel: false,
+            visibleTools: getSavedVisibleTools(),
             onComplete: (res) => {
               downloadResult(res);
               showToast('编辑完成，图片已自动下载保存！');
@@ -283,6 +284,7 @@
         const res = await editor.modal(targetImg, {
           autoUpdateTarget: true,
           rejectOnCancel: false,
+          visibleTools: getSavedVisibleTools(),
         });
         if (res) {
           addLog('[模式一: 完成]', '模态弹窗编辑已完成，目标图片已更新！', true);
@@ -301,7 +303,10 @@
       if (!editor) return;
       addLog('[模式一: 空白]', '打开空白模态弹窗...');
       try {
-        const res = await editor.modal(null, { rejectOnCancel: false });
+        const res = await editor.modal(null, {
+          rejectOnCancel: false,
+          visibleTools: getSavedVisibleTools(),
+        });
         if (res) {
           const img = document.getElementById('demo-modal-img');
           if (img) img.src = res instanceof Blob ? URL.createObjectURL(res) : res;
@@ -325,6 +330,7 @@
         const res = await editor.toolbar(demoInplaceImg, {
           autoUpdateTarget: true,
           rejectOnCancel: false,
+          visibleTools: getSavedVisibleTools(),
         });
         if (res) {
           addLog('[模式二: 完成]', '原地编辑完成，目标节点已更新！', true);
@@ -357,6 +363,7 @@
             showComplete: true,
             showCancel: true,
             rejectOnCancel: false,
+            visibleTools: getSavedVisibleTools(),
             onComplete: (res) => {
               addLog('[模式三: 完成]', '测试槽位编辑完成！', true);
               showToast('分布式插槽编辑完成！');
@@ -381,18 +388,18 @@
     // ----------------------------------------------------
     const ALL_TOOLS = [
       'rect', 'cropAuto', 'lasso', 'quad', 'invert', 'clear',
-      'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase',
+      'alphaMask', 'wand', 'wandMode', 'tolerance', 'spillRadius', 'erase',
       'colorPicker', 'pipette', 'crop', 'fill', 'hd',
       'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ];
     const RECOMMEND_TOOLS = [
-      'rect', 'cropAuto', 'wand', 'tolerance', 'erase', 
+      'rect', 'cropAuto', 'wand', 'tolerance', 'spillRadius', 'erase', 
       'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ];
     const CUTOUT_TOOLS = [
-      'alphaMask', 'wand', 'wandMode', 'tolerance', 'erase', 
+      'alphaMask', 'wand', 'wandMode', 'tolerance', 'spillRadius', 'erase', 
       'crop', 'settings'
     ];
     const TRANSFORM_TOOLS = [
@@ -405,7 +412,7 @@
         const saved = localStorage.getItem('tiamo_active_toolbar_tools');
         if (saved) {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr) && arr.length > 0) {
+          if (Array.isArray(arr) && arr.length === ALL_TOOLS.length) {
             return arr;
           }
         }
@@ -682,7 +689,8 @@
     // ----------------------------------------------------
     function initApp() {
       syncVersionUI();
-      const initialTools = getSavedVisibleTools();
+      // 默认全选所有工具按钮 (全部 26 个工具默认选上)
+      const initialTools = [...ALL_TOOLS];
       saveAndApplyTools(initialTools);
       mountMainWorkspace(null);
     }
