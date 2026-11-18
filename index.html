@@ -78,16 +78,8 @@
     });
   </script>
 
-  <!-- 真实 SDK 产物加载与动态时间戳防缓存：
-       全平台 100% 通过 SDK 标准构建产物 ./dist/tiamo-image-editor.umd.js 驱动，
-       杜绝直接加载 TS 源码导致的假象与 MIME 异常，确保开箱即用。 -->
-  <script>
-    (function() {
-      // 动态时间戳彻底穿透浏览器缓存，确保加载最新构建产物
-      var scriptUrl = './dist/tiamo-image-editor.umd.js?v=' + Date.now();
-      document.write('<script src="' + scriptUrl + '"><\/script>');
-    })();
-  </script>
+  <!-- 真实 SDK 产物加载（由 vite.config.ts distTimestampPlugin / 中央部署基于 version.json 物理 mtime 注入稳定版本参数） -->
+  <script src="./dist/tiamo-image-editor.umd.js?v=1.7.12"></script>
 
   <!-- Tiamo Design System 字体体系 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -95,7 +87,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- 工作台自适应样式 -->
-  <link rel="stylesheet" href="./css/workbench.css?v=1.6.9" />
+  <link rel="stylesheet" href="./css/workbench.css?v=1.7.12" />
 </head>
 <body>
 
@@ -117,21 +109,21 @@
         <span class="brand-pill">图像编辑工作台</span>
         <div class="version-indicator" id="top-version-badge" title="当前版本与状态">
           <span class="status-dot-pulse"></span>
-          <span id="top-version-text">v1.6.2</span>
+          <span id="top-version-text">v1.7.11</span>
         </div>
       </div>
     </div>
 
     <!-- 中间快捷功能：打开本地、保存本地、清空画布 -->
     <div class="topbar-center">
-      <label class="top-action-btn" title="选择本地图片文件打开">
+      <label class="top-action-btn" title="选择本地图片或 .layers.json 分层状态文件打开">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="17 8 12 3 7 8"/>
           <line x1="12" x2="12" y1="3" y2="15"/>
         </svg>
         <span>打开本地图片</span>
-        <input type="file" id="main-file-input" accept="image/*,application/pdf" style="display:none;" />
+        <input type="file" id="main-file-input" accept="image/*,application/pdf,.json" multiple style="display:none;" />
       </label>
 
       <button class="top-action-btn" id="btn-save-image" title="保存当前编辑后的图片到本地文件">
@@ -233,10 +225,10 @@
           <div class="ssd-section">
             <div class="ssd-tools-header">
               <div class="ssd-section-label">带入 SDK 的按钮与功能</div>
-              <span class="ssd-count-badge" id="ssd-selected-count">已选 26/26</span>
+              <span class="ssd-count-badge" id="ssd-selected-count">已选 28/28</span>
             </div>
             <div class="ssd-quick-presets">
-              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (26)</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (28)</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-recommend">常用推荐</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-cutout">纯抠图</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-transform">几何旋转</button>
@@ -274,7 +266,7 @@
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="pipette" checked /><span>吸管取色</span></label>
                 </div>
               </div>
-              <!-- 剪裁擦除组 (4) -->
+              <!-- 剪裁擦除组 (6) -->
               <div class="ssd-group-block">
                 <div class="ssd-group-label">剪裁擦除组</div>
                 <div class="ssd-tool-chips">
@@ -282,6 +274,9 @@
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="fill" checked /><span>选区着色</span></label>
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="erase" checked /><span>选区擦除</span></label>
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="hd" checked /><span>稀疏高清</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="importGraphic" checked /><span>导入图形</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="expandCanvas" checked /><span>扩展画布</span></label>
+                  <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="border" checked /><span>有效边框</span></label>
                 </div>
               </div>
               <!-- 旋转校正组 (8) -->
@@ -427,12 +422,12 @@
       <!-- 置顶一键下载与快速引入区 -->
       <div class="sdk-download-banner">
         <div class="download-meta">
-          <span class="meta-tag" id="modal-ver-tag">版本: v1.6.2</span>
+          <span class="meta-tag" id="modal-ver-tag">版本: v1.7.11</span>
           <span class="meta-tag">产物大小: ~280 KB</span>
           <span class="meta-tag">标准产物: tiamo-image-editor.umd.js</span>
         </div>
         <div class="download-btn-group">
-          <a href="./dist/tiamo-image-editor.umd.js?v=1.6.9" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
+          <a href="./dist/tiamo-image-editor.umd.js?v=1.7.12" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
@@ -559,10 +554,10 @@
                 <div style="font-size:0.78rem;color:#64748b;">预设常见场景或自定义勾选，实时生成 <code>visibleTools</code> 配置参数代码</div>
               </div>
               <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
-                <button class="top-action-btn" id="modal-preset-all">全部显示 (26)</button>
-                <button class="top-action-btn" id="modal-preset-recommend">常用推荐 (12)</button>
-                <button class="top-action-btn" id="modal-preset-cutout">纯抠图方案 (7)</button>
-                <button class="top-action-btn" id="modal-preset-transform">几何与旋转 (9)</button>
+                <button class="top-action-btn" id="modal-preset-all">全部显示 (28)</button>
+                <button class="top-action-btn" id="modal-preset-recommend">常用推荐 (17)</button>
+                <button class="top-action-btn" id="modal-preset-cutout">纯抠图方案 (8)</button>
+                <button class="top-action-btn" id="modal-preset-transform">几何与旋转 (12)</button>
                 <button class="top-action-btn" id="modal-preset-clear">清空</button>
               </div>
             </div>
@@ -601,6 +596,9 @@
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="fill" checked /><span>选区着色</span></label>
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="erase" checked /><span>选区擦除</span></label>
                 <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="hd" checked /><span>稀疏高清</span></label>
+                <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="importGraphic" checked /><span>导入图形</span></label>
+                <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="expandCanvas" checked /><span>扩展画布</span></label>
+                <label class="tool-checkbox-item"><input type="checkbox" class="modal-tool-cb" value="border" checked /><span>有效边框</span></label>
               </div>
               <!-- 分组 5 -->
               <div class="tools-group">
@@ -628,6 +626,35 @@
             </div>
             <pre class="code-box" id="generated-code-box">// 正在生成...</pre>
           </div>
+
+          <!-- 宿主素材库直接导入图形接口速查说明 -->
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:1rem;padding:1.25rem;">
+            <div style="font-size:0.95rem;font-weight:800;color:#0f172a;margin-bottom:0.35rem;">宿主素材库直接导入图形接口 (importGraphic &amp; onRequestImportGraphic)</div>
+            <div style="font-size:0.78rem;color:#64748b;margin-bottom:0.85rem;">当宿主有自己的素材库（不希望从本地磁盘选文件）时，可拦截工具栏【导入图形】按钮，或直接从外部编程式插入图形：</div>
+            <pre class="code-box">// 1. 方式一：拦截工具栏【导入图形】按钮，转为打开宿主自有素材库
+await TiamoImageEditor.distributed('#toolbar-slot', '#canvas-slot', baseImg, {
+  onRequestImportGraphic: async (importGraphic) => {
+    const pickedUrl = await openHostAssetPicker();
+    if (!pickedUrl) return null;
+    // 可直接返回图形配置，或直接调用 importGraphic(pickedUrl, options)
+    return { source: pickedUrl, options: { name: '宿主素材', w: 240, autoSelect: true } };
+  }
+});
+
+// 2. 方式二：宿主侧边素材库点击时，直接向当前活跃编辑画布插入图形（支持 URL/Base64/Blob/File/Img/Canvas）
+await TiamoImageEditor.importGraphic('/assets/stamp.png', {
+  name: '公章', x: 120, y: 80, w: 200, autoSelect: true
+});
+await TiamoImageEditor.expandCanvas(); // 可选：按所有元素外边框最大值扩展画布
+
+// 3. 分层状态独立保存与继承（不破坏未融合图层）：
+const layerState = TiamoImageEditor.getLayerState(); // 获取底图 + 全部独立图形及锁定/层级状态
+// 下次打开编辑时通过 initialState 传入，或由 onComplete(result, state) / onSaveState(state) 持久化后继承：
+await TiamoImageEditor.edit(imgElement, {
+  initialState: savedLayerState,
+  onComplete: (blob, nextState) => saveToHost(blob, nextState),
+});</pre>
+          </div>
         </div>
 
         <!-- Tab 3: 调试日志与终端发布 -->
@@ -647,14 +674,14 @@
             </div>
           </div>
 
-          <!-- 终端快速发布指引 -->
+          <!-- 终端快速构建指引 -->
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:1rem;padding:1.25rem;">
-            <div style="font-size:0.9rem;font-weight:800;color:#0f172a;margin-bottom:0.35rem;">开发者终端发布指令</div>
-            <div style="font-size:0.78rem;color:#64748b;margin-bottom:0.85rem;">在本地开发环境下，可直接复制此命令在终端执行，一键执行打包并同步至中央仓库：</div>
+            <div style="font-size:0.9rem;font-weight:800;color:#0f172a;margin-bottom:0.35rem;">开发者终端构建指令</div>
+            <div style="font-size:0.78rem;color:#64748b;margin-bottom:0.85rem;">在本地开发环境下，可直接复制此命令在终端执行，构建最新 UMD / ES SDK 产物至 dist/：</div>
             <div style="display:flex;gap:0.5rem;align-items:center;">
-              <pre class="code-box" style="flex:1;padding:0.6rem 1rem;" id="modal-cli-cmd">npm run publish:sdk</pre>
+              <pre class="code-box" style="flex:1;padding:0.6rem 1rem;" id="modal-cli-cmd">npm run build</pre>
               <button class="btn-action-primary" id="btn-copy-publish-cmd" style="padding:0.6rem 1rem;">
-                <span>复制发布指令</span>
+                <span>复制构建指令</span>
               </button>
             </div>
           </div>
@@ -665,15 +692,8 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- 工作台业务逻辑脚本 (动态时间戳彻底穿透浏览器缓存) -->
+  <!-- 工作台业务逻辑脚本 -->
   <!-- ======================================================== -->
-  <script>
-    (function() {
-      var s = document.createElement('script');
-      s.type = 'module';
-      s.src = './js/workbench.js?v=' + Date.now();
-      document.body.appendChild(s);
-    })();
-  </script>
+  <script type="module" src="./js/workbench.js?v=1.7.12"></script>
 </body>
 </html>

@@ -1,14 +1,14 @@
 {
   "name": "AI 图片编辑器 (TiamoImageEditor)",
   "appId": "image",
-  "version": "1.6.9",
-  "buildTime": "2026-11-13 09:17:00",
+  "version": "1.7.12",
+  "buildTime": "2026-11-19 00:32:27",
   "frontend": {
-    "version": "1.6.9",
-    "buildTime": "2026-11-13 09:17:00"
+    "version": "1.7.12",
+    "buildTime": "2026-11-19 00:32:27"
   },
   "backend": {
-    "version": "static",
-    "buildTime": "2026-11-13 09:17:00"
+    "version": "1.7.12",
+    "buildTime": "2026-11-19 00:32:27"
   }
 }

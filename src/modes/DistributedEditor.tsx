@@ -22,17 +22,6 @@ export const DistributedEditor: React.FC<DistributedEditorProps> = (props) => {
   const { toolbarContainer, canvasContainer } = props;
   const core = useImageEditorCore(props);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).__TIAMO_ACTIVE_CORE__ = core;
-    }
-    return () => {
-      if (typeof window !== 'undefined' && (window as any).__TIAMO_ACTIVE_CORE__ === core) {
-        delete (window as any).__TIAMO_ACTIVE_CORE__;
-      }
-    };
-  }, [core]);
-
   const resolvedToolbarNode = useMemo(() => {
     if (typeof toolbarContainer === 'string') {
       return document.querySelector(toolbarContainer) as HTMLElement | null;
@@ -46,6 +35,12 @@ export const DistributedEditor: React.FC<DistributedEditorProps> = (props) => {
     }
     return canvasContainer;
   }, [canvasContainer]);
+
+  useEffect(() => {
+    if (!resolvedToolbarNode || !resolvedCanvasNode) {
+      props.onCancel?.();
+    }
+  }, [resolvedToolbarNode, resolvedCanvasNode, props.onCancel]);
 
   if (!resolvedToolbarNode || !resolvedCanvasNode) {
     console.error('[TiamoImageEditor Distributed] 找不到指定的 toolbarContainer 或 canvasContainer 容器节点', {

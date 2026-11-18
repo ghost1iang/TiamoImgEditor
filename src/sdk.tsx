@@ -6,6 +6,18 @@ import { ToolbarPopoverEditor } from './modes/ToolbarPopoverEditor';
 import { DistributedEditor } from './modes/DistributedEditor';
 import { SDK_VERSION, SDK_BUILD_TIME, SDK_DESCRIPTION } from './version';
 import { ToolbarToolId } from './types/toolbar';
+import {
+  type EditorLayerState,
+  type GraphicInputSource,
+  type ImportGraphicOptions,
+  type ImportedGraphic,
+  type OnRequestImportGraphicHandler,
+  parseEditorLayerState,
+  saveLayerStateToCache,
+  findCachedLayerState,
+} from './core/algorithms/graphicLayer';
+
+const ELEMENT_LAYER_STATE_MAP = new WeakMap<HTMLElement, EditorLayerState>();
 
 export type EditorMode = 'modal' | 'toolbar' | 'distributed';
 export type OutputType = 'blob' | 'base64' | 'canvas';
@@ -24,7 +36,10 @@ export interface EditOptions {
   autoUpdateTarget?: boolean;
   rejectOnCancel?: boolean;
   useShadowDOM?: boolean;
-  onComplete?: (result: Blob | string | HTMLCanvasElement) => void;
+  initialState?: EditorLayerState | string | null;
+  onRequestImportGraphic?: OnRequestImportGraphicHandler;
+  onSaveState?: (state: EditorLayerState) => void;
+  onComplete?: (result: Blob | string | HTMLCanvasElement, state: EditorLayerState) => void;
   onCancel?: () => void;
 }
 
@@ -32,6 +47,7 @@ export interface EditResult {
   blob: Blob;
   base64: string;
   canvas: HTMLCanvasElement;
+  state: EditorLayerState;
 }
 
 export class TiamoImageEditor {
@@ -89,13 +105,63 @@ export class TiamoImageEditor {
         }
       }
 
+      const resolveMountContainer = (target?: HTMLElement | string): HTMLElement | null => {
+        if (!target) return null;
+        if (typeof target === 'string') return document.querySelector(target) as HTMLElement | null;
+        return target instanceof HTMLElement ? target : null;
+      };
+
+      // 解析初始图片输入及独立分层状态
+      let initialImage: any = null;
+      let targetElement: HTMLElement | null = null;
+      let resolvedInitialState: EditorLayerState | string | null = options.initialState || null;
+
+      if (targetOrSource instanceof HTMLElement) {
+        targetElement = targetOrSource;
+        if (targetOrSource instanceof HTMLImageElement) {
+          initialImage = targetOrSource.src;
+        } else if (targetOrSource instanceof HTMLCanvasElement) {
+          initialImage = targetOrSource.toDataURL('image/png');
+        }
+        if (!resolvedInitialState) {
+          resolvedInitialState =
+            ELEMENT_LAYER_STATE_MAP.get(targetOrSource) ||
+            parseEditorLayerState(targetOrSource.dataset?.tiamoLayerState) ||
+            findCachedLayerState(
+              targetOrSource instanceof HTMLImageElement ? targetOrSource.src : null
+            ) ||
+            null;
+        }
+      } else if (typeof targetOrSource === 'string' || targetOrSource instanceof Blob) {
+        initialImage = targetOrSource;
+        if (!resolvedInitialState && typeof targetOrSource === 'string') {
+          resolvedInitialState = findCachedLayerState(targetOrSource);
+        }
+      }
+
+      // 严格校验模式必需参数，严禁参数不全时静默降级或使 Promise 永不 settle
+      if (mode === 'toolbar' && !targetElement) {
+        if (hostContainer.parentNode) hostContainer.parentNode.removeChild(hostContainer);
+        reject(new Error('TiamoImageEditor toolbar 模式必须传入有效的目标 DOM 元素 (<img> 或 <canvas>)'));
+        return;
+      }
+      if (mode === 'distributed') {
+        const tbNode = resolveMountContainer(options.toolbarContainer);
+        const cvNode = resolveMountContainer(options.canvasContainer);
+        if (!tbNode || !cvNode) {
+          if (hostContainer.parentNode) hostContainer.parentNode.removeChild(hostContainer);
+          reject(new Error('TiamoImageEditor distributed 模式未找到指定的 toolbarContainer 或 canvasContainer 容器节点'));
+          return;
+        }
+      }
+
       const reactRoot = ReactDOM.createRoot(mountPoint);
 
       const cleanup = () => {
         try {
           reactRoot.unmount();
         } catch (e) {
-          // ignore
+          console.warn('[TiamoImageEditor SDK] reactRoot.unmount() 清理异常:', e);
         }
         if (hostContainer.parentNode) {
           hostContainer.parentNode.removeChild(hostContainer);
@@ -105,12 +171,33 @@ export class TiamoImageEditor {
       const handleDone = (result: EditResult) => {
         cleanup();
 
-        // 自动更新宿主目标 <img>
+        const layerState = result.state;
+        const hasLayers = !!(layerState && layerState.graphics && layerState.graphics.length > 0);
+        if (layerState) {
+          saveLayerStateToCache(result.base64, layerState, [
+            targetOrSource instanceof HTMLImageElement ? targetOrSource.src : null,
+          ]);
+        }
+
+        // 自动更新宿主目标 <img>，并在图片节点之外记录分层状态以便下次编辑直接继承
         if (autoUpdateTarget && targetOrSource instanceof HTMLImageElement) {
-          if (outputType === 'base64') {
-            targetOrSource.src = result.base64;
+          const nextSrc = outputType === 'base64' ? result.base64 : URL.createObjectURL(result.blob);
+          targetOrSource.src = nextSrc;
+          if (hasLayers) {
+            ELEMENT_LAYER_STATE_MAP.set(targetOrSource, layerState);
+            try {
+              targetOrSource.dataset.tiamoLayerState = JSON.stringify(layerState);
+            } catch (datasetErr) {
+              console.warn('[TiamoImageEditor SDK] dataset.tiamoLayerState 写入失败，已仅保留 WeakMap 缓存:', datasetErr);
+            }
+            if (!nextSrc.startsWith('blob:')) {
+              saveLayerStateToCache(nextSrc, layerState);
+            }
           } else {
-            targetOrSource.src = URL.createObjectURL(result.blob);
+            ELEMENT_LAYER_STATE_MAP.delete(targetOrSource);
+            if (targetOrSource.dataset) {
+              delete targetOrSource.dataset.tiamoLayerState;
+            }
           }
         }
 
@@ -119,7 +206,7 @@ export class TiamoImageEditor {
         if (outputType === 'base64') finalOutput = result.base64;
         else if (outputType === 'canvas') finalOutput = result.canvas;
 
-        if (options.onComplete) options.onComplete(finalOutput);
+        if (options.onComplete) options.onComplete(finalOutput, layerState);
         resolve(finalOutput);
       };
 
@@ -133,20 +220,26 @@ export class TiamoImageEditor {
         }
       };
 
-      // 解析初始图片输入
-      let initialImage: any = null;
-      let targetElement: HTMLElement | null = null;
-
-      if (targetOrSource instanceof HTMLElement) {
-        targetElement = targetOrSource;
-        if (targetOrSource instanceof HTMLImageElement) {
-          initialImage = targetOrSource.src;
-        } else if (targetOrSource instanceof HTMLCanvasElement) {
-          initialImage = targetOrSource.toDataURL('image/png');
+      const handleSaveState = (st: EditorLayerState) => {
+        if (targetElement) {
+          if (st.graphics && st.graphics.length > 0) {
+            ELEMENT_LAYER_STATE_MAP.set(targetElement, st);
+            try {
+              targetElement.dataset.tiamoLayerState = JSON.stringify(st);
+            } catch (datasetErr) {
+              console.warn('[TiamoImageEditor SDK] 保存状态写入 dataset.tiamoLayerState 失败:', datasetErr);
+            }
+          } else {
+            ELEMENT_LAYER_STATE_MAP.delete(targetElement);
+            if (targetElement.dataset) {
+              delete targetElement.dataset.tiamoLayerState;
+            }
+          }
         }
-      } else if (typeof targetOrSource === 'string' || targetOrSource instanceof Blob) {
-        initialImage = targetOrSource;
-      }
+        if (options.onSaveState) {
+          options.onSaveState(st);
+        }
+      };
 
       // 根据三种模式渲染对应视图
       if (mode === 'toolbar' && targetElement) {
@@ -154,10 +247,13 @@ export class TiamoImageEditor {
           <ToolbarPopoverEditor
             targetElement={targetElement}
             initialImage={initialImage}
+            initialState={resolvedInitialState}
             apiKey={apiKey}
             tools={options.tools}
             visibleTools={options.visibleTools}
             hiddenTools={options.hiddenTools}
+            onRequestImportGraphic={options.onRequestImportGraphic}
+            onSaveState={handleSaveState}
             onComplete={handleDone}
             onCancel={handleCancel}
           />
@@ -176,12 +272,15 @@ export class TiamoImageEditor {
             toolbarContainer={options.toolbarContainer}
             canvasContainer={options.canvasContainer}
             initialImage={initialImage}
+            initialState={resolvedInitialState}
             apiKey={apiKey}
             tools={options.tools}
             visibleTools={options.visibleTools}
             hiddenTools={options.hiddenTools}
             showComplete={options.showComplete}
             showCancel={options.showCancel}
+            onRequestImportGraphic={options.onRequestImportGraphic}
+            onSaveState={handleSaveState}
             onComplete={handleDone}
             onCancel={handleCancel}
           />
@@ -191,12 +290,15 @@ export class TiamoImageEditor {
         reactRoot.render(
           <ModalEditor
             initialImage={initialImage}
+            initialState={resolvedInitialState}
             apiKey={apiKey}
             tools={options.tools}
             visibleTools={options.visibleTools}
             hiddenTools={options.hiddenTools}
             showComplete={options.showComplete}
             showCancel={options.showCancel}
+            onRequestImportGraphic={options.onRequestImportGraphic}
+            onSaveState={handleSaveState}
             onComplete={handleDone}
             onCancel={handleCancel}
           />
@@ -230,24 +332,55 @@ export class TiamoImageEditor {
   ) {
     return this.edit(source, { ...options, mode: 'distributed', toolbarContainer, canvasContainer });
   }
-}
 
-// 挂载到全局 window 对象，供 script 标签直引
-if (typeof window !== 'undefined') {
-  const g = window as any;
-  g.TiamoImageEditor = TiamoImageEditor;
+  /**
+   * 编程式直接导入图形至当前活跃编辑器画布（供宿主自有素材库调用）
+   * @param source 图片 URL、Base64、Blob、File、HTMLImageElement 或 HTMLCanvasElement
+   * @param options 初始位置、宽高、比例限制及自动选中配置
+   */
+  static async importGraphic(
+    source: GraphicInputSource,
+    options?: ImportGraphicOptions
+  ): Promise<ImportedGraphic | null> {
+    const activeCore = typeof window !== 'undefined' ? (window as any).__TIAMO_ACTIVE_CORE__ : null;
+    if (!activeCore || typeof activeCore.importGraphic !== 'function') {
+      throw new Error('当前没有活跃的 TiamoImageEditor 编辑实例，无法导入图形');
+    }
+    return activeCore.importGraphic(source, options);
+  }
 
-  // 确保不管在任何时机，window.TiamoImageEditor.edit 都可以直接调用
-  Object.assign(TiamoImageEditor, {
-    edit: TiamoImageEditor.edit,
-    modal: TiamoImageEditor.modal,
-    toolbar: TiamoImageEditor.toolbar,
-    distributed: TiamoImageEditor.distributed,
-    version: SDK_VERSION,
-    buildTime: SDK_BUILD_TIME,
-  });
-  g.TiamoImageEditor.version = SDK_VERSION;
-  g.TiamoImageEditor.buildTime = SDK_BUILD_TIME;
+  /**
+   * 编程式触发当前活跃编辑器的【扩展画布】动作（取所有元素最大外边框生成新画布）
+   */
+  static async expandCanvas(): Promise<void> {
+    const activeCore = typeof window !== 'undefined' ? (window as any).__TIAMO_ACTIVE_CORE__ : null;
+    if (!activeCore || typeof activeCore.handleExpandCanvas !== 'function') {
+      throw new Error('当前没有活跃的 TiamoImageEditor 编辑实例，无法扩展画布');
+    }
+    return activeCore.handleExpandCanvas();
+  }
+
+  /**
+   * 获取当前活跃编辑器的独立分层状态快照（底图 + 所有未融合图形图层 + 层级与锁定状态）
+   */
+  static getLayerState(): EditorLayerState | null {
+    const activeCore = typeof window !== 'undefined' ? (window as any).__TIAMO_ACTIVE_CORE__ : null;
+    if (!activeCore || typeof activeCore.getLayerState !== 'function') {
+      return null;
+    }
+    return activeCore.getLayerState();
+  }
+
+  /**
+   * 向当前活跃编辑器恢复载入独立分层状态数据
+   */
+  static loadLayerState(state: EditorLayerState | string): boolean {
+    const activeCore = typeof window !== 'undefined' ? (window as any).__TIAMO_ACTIVE_CORE__ : null;
+    if (!activeCore || typeof activeCore.loadLayerState !== 'function') {
+      throw new Error('当前没有活跃的 TiamoImageEditor 编辑实例，无法加载图层状态');
+    }
+    return activeCore.loadLayerState(state);
+  }
 }
 
 export default TiamoImageEditor;

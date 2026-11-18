@@ -7,9 +7,27 @@ export const edit = TiamoImageEditor.edit.bind(TiamoImageEditor);
 export const modal = TiamoImageEditor.modal.bind(TiamoImageEditor);
 export const toolbar = TiamoImageEditor.toolbar.bind(TiamoImageEditor);
 export const distributed = TiamoImageEditor.distributed.bind(TiamoImageEditor);
+export const importGraphic = TiamoImageEditor.importGraphic.bind(TiamoImageEditor);
+export const expandCanvas = TiamoImageEditor.expandCanvas.bind(TiamoImageEditor);
+export const getLayerState = TiamoImageEditor.getLayerState.bind(TiamoImageEditor);
+export const loadLayerState = TiamoImageEditor.loadLayerState.bind(TiamoImageEditor);
 
 export { useImageEditorCore } from './core/useImageEditorCore';
-export type { ImageEditorCore, HistoryRecord, Point, SelectionRegion, RectDragPoints } from './core/useImageEditorCore';
+export type { ImageEditorCore, CoreOptions, HistoryRecord, Point, SelectionRegion, RectDragPoints } from './core/useImageEditorCore';
+export type {
+  EightPointHandleId,
+  EditorLayerState,
+  GraphicBox,
+  ImportedGraphic,
+  GraphicInputSource,
+  GraphicLayerOrderAction,
+  ImportGraphicOptions,
+  OnRequestImportGraphicItem,
+  OnRequestImportGraphicResult,
+  OnRequestImportGraphicHandler,
+  SnapGuideLines,
+  ExpandedCanvasBounds,
+} from './core/algorithms/graphicLayer';
 
 export { Toolbar } from './components/Toolbar';
 export { ToolbarSettingsPopover } from './components/ToolbarSettingsPopover';
@@ -48,6 +66,10 @@ if (typeof window !== 'undefined') {
     globalObj.TiamoImageEditor.modal = modal;
     globalObj.TiamoImageEditor.toolbar = toolbar;
     globalObj.TiamoImageEditor.distributed = distributed;
+    globalObj.TiamoImageEditor.importGraphic = importGraphic;
+    globalObj.TiamoImageEditor.expandCanvas = expandCanvas;
+    globalObj.TiamoImageEditor.getLayerState = getLayerState;
+    globalObj.TiamoImageEditor.loadLayerState = loadLayerState;
     globalObj.TiamoImageEditor.version = SDK_VERSION;
     globalObj.TiamoImageEditor.buildTime = SDK_BUILD_TIME;
 

@@ -24,6 +24,9 @@ export type ToolbarToolId =
   | 'crop'          // 按区剪裁
   | 'fill'          // 选区着色
   | 'hd'            // 稀疏高清重构
+  | 'importGraphic' // 导入图形
+  | 'expandCanvas'  // 扩展画布
+  | 'border'        // 边框 (沿有效像素最外层添加)
   // 旋转与镜像
   | 'flipH'         // 水平镜像
   | 'flipV'         // 垂直镜像
@@ -88,6 +91,9 @@ export const ALL_TOOLBAR_TOOLS: ToolbarToolDef[] = [
   { id: 'fill', name: '选区着色', shortName: '着色', category: 'action', description: '将当前调色板颜色批量填充进选区', defaultVisible: true },
   { id: 'erase', name: '选区擦除', shortName: '擦除', category: 'action', description: '擦除魔棒、矩形、套索或多边形选区内容为透明区域', defaultVisible: true },
   { id: 'hd', name: '稀疏高清', shortName: '高清', category: 'action', description: '基于稀疏插值与超分重构无损放大图片分辨率', defaultVisible: true },
+  { id: 'importGraphic', name: '导入图形', shortName: '导入图形', category: 'action', description: '导入一张新的图片作为浮动图形，支持 8 点触控吸附缩放、吸附移动、镜像与正负 90° 旋转', defaultVisible: true },
+  { id: 'expandCanvas', name: '扩展画布', shortName: '扩展画布', category: 'action', description: '将所有元素的外边框取最大值生成新的画布，完整容纳画布外拖出的图形', defaultVisible: true },
+  { id: 'border', name: '有效边框', shortName: '边框', category: 'action', description: '沿着有效像素最外层添加指定宽度与颜色的边框', defaultVisible: true },
 
   // 5. 旋转与镜像
   { id: 'flipH', name: '水平镜像', shortName: '水平翻转', category: 'transform', description: '沿左右中心线对称翻转', defaultVisible: true },

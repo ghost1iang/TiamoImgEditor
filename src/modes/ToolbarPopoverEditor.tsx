@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useImageEditorCore, CoreOptions } from '../core/useImageEditorCore';
 import { Toolbar } from '../components/Toolbar';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Loader2 } from 'lucide-react';
 import { ToolbarToolId } from '../types/toolbar';
+import { EIGHT_POINT_HANDLES } from '../core/algorithms/graphicLayer';
+import {
+  GraphicCanvasItems,
+  GraphicControlFrame,
+} from '../components/GraphicOverlayLayer';
 
 export interface ToolbarPopoverEditorProps extends CoreOptions {
   targetElement: HTMLElement;
@@ -18,6 +23,7 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
   const { targetElement } = props;
   const core = useImageEditorCore(props);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [imgNaturalSize, setImgNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
   // 更新目标元素的位置与尺寸
   const updateRect = () => {
@@ -49,15 +55,12 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
 
   const {
     currentImage,
-    isPanning,
-    spacePressed,
     activeTool,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     handleDoubleClick,
     rotationAngle,
-    showAlphaMask,
     isLoading,
     imageRef,
     displayMaskRef,
@@ -69,15 +72,66 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
     polyHoverClose,
     polyMousePos,
     draggingPointIdx,
-    rectDragPoints,
+    hdBox,
+    hdDragHandle,
+    importedGraphics,
+    baseLayerIndex,
+    selectedGraphicId,
+    setSelectedGraphicId,
+    graphicSnapLines,
   } = core;
 
+  const clampedBaseLayerIndex = Math.max(0, Math.min(importedGraphics.length, baseLayerIndex ?? 0));
+  const belowGraphics = importedGraphics.slice(0, clampedBaseLayerIndex);
+  const aboveGraphics = importedGraphics.slice(clampedBaseLayerIndex);
+  const selectedGraphic = importedGraphics.find((g) => g.id === selectedGraphicId) || null;
+  const stageNw = imageRef.current?.naturalWidth || imgNaturalSize?.width || 0;
+  const stageNh = imageRef.current?.naturalHeight || imgNaturalSize?.height || 0;
+
+  useEffect(() => {
+    const imgEl = imageRef.current;
+    if (imgEl && imgEl.complete && imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0) {
+      setImgNaturalSize({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
+    } else if (!currentImage) {
+      setImgNaturalSize(null);
+    }
+  }, [currentImage, imageRef]);
+
+  // 计算与底图当前真实宽高比严格贴合的原地编辑舞台尺寸，消除扩布/裁剪/旋转后 object-contain 留白导致的坐标错位
+  const stageRect = useMemo(() => {
+    if (!targetRect) return null;
+    if (!imgNaturalSize || imgNaturalSize.width <= 0 || imgNaturalSize.height <= 0 || targetRect.width <= 0 || targetRect.height <= 0) {
+      return {
+        top: targetRect.top,
+        left: targetRect.left,
+        width: targetRect.width,
+        height: targetRect.height,
+      };
+    }
+    const targetAspect = targetRect.width / targetRect.height;
+    const imgAspect = imgNaturalSize.width / imgNaturalSize.height;
+    let width = targetRect.width;
+    let height = targetRect.height;
+    if (imgAspect > targetAspect) {
+      height = width / imgAspect;
+    } else {
+      width = height * imgAspect;
+    }
+    return {
+      top: targetRect.top + (targetRect.height - height) / 2,
+      left: targetRect.left + (targetRect.width - width) / 2,
+      width,
+      height,
+    };
+  }, [targetRect, imgNaturalSize]);
+
   // 计算浮动工具栏坐标
-  const toolbarTop = targetRect 
-    ? (targetRect.top > 60 ? targetRect.top - 52 : targetRect.bottom + 10) 
+  const anchorRect = stageRect || targetRect;
+  const toolbarTop = anchorRect
+    ? (anchorRect.top > 60 ? anchorRect.top - 52 : anchorRect.top + anchorRect.height + 10)
     : 20;
-  const toolbarLeft = targetRect 
-    ? Math.max(12, Math.min(window.innerWidth - 680, targetRect.left)) 
+  const toolbarLeft = anchorRect
+    ? Math.max(12, Math.min(window.innerWidth - 680, anchorRect.left))
     : 20;
 
   return (
@@ -100,23 +154,26 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
         />
       </div>
 
-      {/* 如果有选区且无进行中的工具，点击图片外部区域取消选区 */}
-      {core.hasSelection && !core.activeTool && (
+      {/* 如果有选区或选中导入图形且无进行中的工具，点击图片外部区域取消选区或取消图形选中 */}
+      {(core.hasSelection || selectedGraphicId) && !core.activeTool && (
         <div 
           className="fixed inset-0 z-[999980] pointer-events-auto cursor-default"
-          onClick={() => core.clearSelection()}
+          onClick={() => {
+            if (core.hasSelection) core.clearSelection();
+            if (selectedGraphicId) setSelectedGraphicId(null);
+          }}
         />
       )}
 
-      {/* 原地编辑遮罩层 (与目标元素重合) */}
-      {targetRect && currentImage && (
+      {/* 原地编辑遮罩层 (按当前底图实际宽高比贴合拟合，防止扩布或裁剪后容器留白导致坐标错位) */}
+      {stageRect && currentImage && (
         <div 
-          className="fixed pointer-events-auto overflow-visible cursor-crosshair ring-4 ring-blue-500/80 shadow-2xl rounded-sm transition-all"
+          className="fixed z-[999985] pointer-events-auto overflow-visible cursor-crosshair ring-4 ring-blue-500/80 shadow-2xl rounded-sm transition-all"
           style={{
-            top: `${targetRect.top}px`,
-            left: `${targetRect.left}px`,
-            width: `${targetRect.width}px`,
-            height: `${targetRect.height}px`,
+            top: `${stageRect.top}px`,
+            left: `${stageRect.left}px`,
+            width: `${stageRect.width}px`,
+            height: `${stageRect.height}px`,
           }}
           onMouseDown={handleMouseDown} 
           onMouseMove={handleMouseMove} 
@@ -124,9 +181,23 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
           onDoubleClick={handleDoubleClick}
           onContextMenu={(e) => e.preventDefault()}
         >
+          {/* 位于底图下方的导入图形图层 */}
+          {stageNw > 0 && stageNh > 0 && belowGraphics.length > 0 && (
+            <GraphicCanvasItems
+              graphics={belowGraphics}
+              selectedId={selectedGraphicId}
+              naturalWidth={stageNw}
+              naturalHeight={stageNh}
+              snapLines={graphicSnapLines}
+              interactive={!activeTool}
+              zIndexClass="z-0"
+              showSnapLines={false}
+            />
+          )}
+
           {/* 原位渲染画布与选区 */}
           <div 
-            className="relative w-full h-full overflow-hidden leading-[0]"
+            className="relative z-10 w-full h-full overflow-hidden leading-[0]"
             style={{ transform: `rotate(${rotationAngle}deg)`, transformOrigin: 'center center' }}
           >
             <img 
@@ -134,7 +205,14 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
               src={currentImage} 
               alt="In-place Workspace" 
               draggable="false" 
-              className={`w-full h-full object-contain pointer-events-none transition-all ${isLoading ? 'blur-sm opacity-40' : 'opacity-100'}`} 
+              onLoad={(e) => {
+                const nw = e.currentTarget.naturalWidth;
+                const nh = e.currentTarget.naturalHeight;
+                if (nw > 0 && nh > 0) {
+                  setImgNaturalSize({ width: nw, height: nh });
+                }
+              }}
+              className={`w-full h-full block pointer-events-none transition-all ${isLoading ? 'blur-sm opacity-40' : 'opacity-100'}`} 
             />
             <canvas ref={displayMaskRef} className="absolute inset-0 pointer-events-none w-full h-full" />
 
@@ -240,6 +318,76 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
               </div>
             )}
           </div>
+
+          {/* 位于底图上方的导入图形图层、对齐辅助线与 8 点触控操作框 (位于 overflow-hidden 外部，拖出边界外依然完整显示与可交互) */}
+          {stageNw > 0 && stageNh > 0 && (aboveGraphics.length > 0 || graphicSnapLines.x !== null || graphicSnapLines.y !== null) && (
+            <GraphicCanvasItems
+              graphics={aboveGraphics}
+              selectedId={selectedGraphicId}
+              naturalWidth={stageNw}
+              naturalHeight={stageNh}
+              snapLines={graphicSnapLines}
+              interactive={!activeTool}
+              zIndexClass="z-20"
+              showSnapLines={true}
+            />
+          )}
+          {!activeTool && selectedGraphic && stageNw > 0 && stageNh > 0 && (
+            <GraphicControlFrame
+              graphic={selectedGraphic}
+              naturalWidth={stageNw}
+              naturalHeight={stageNh}
+            />
+          )}
+
+          {/* 稀疏高清 8 点控制框 */}
+          {activeTool === 'hd' && hdBox && imageRef.current && (() => {
+            const nw = imageRef.current.naturalWidth;
+            const nh = imageRef.current.naturalHeight;
+            if (!nw || !nh) return null;
+
+            const isDragging = !!hdDragHandle;
+            const leftPct = isDragging ? (hdBox.x / nw) * 100 : 0;
+            const topPct = isDragging ? (hdBox.y / nh) * 100 : 0;
+            const widthPct = isDragging ? (hdBox.w / nw) * 100 : 100;
+            const heightPct = isDragging ? (hdBox.h / nh) * 100 : 100;
+
+            return (
+              <div
+                className="absolute pointer-events-none z-30"
+                style={{
+                  left: `${leftPct}%`,
+                  top: `${topPct}%`,
+                  width: `${widthPct}%`,
+                  height: `${heightPct}%`,
+                }}
+              >
+                <div className="absolute inset-0 border-2 border-dashed border-amber-500 bg-amber-500/10" />
+                {EIGHT_POINT_HANDLES.map((h) => (
+                  <div
+                    key={h.id}
+                    data-hd-handle={h.id}
+                    title={
+                      h.isCorner
+                        ? '等比缩放 (固定宽高比例)'
+                        : h.id === 'e' || h.id === 'w'
+                          ? '增加宽度'
+                          : '增加高度'
+                    }
+                    className={`absolute w-3.5 h-3.5 bg-white border-2 border-amber-600 shadow-md pointer-events-auto transition-transform hover:scale-125 ${
+                      h.isCorner ? 'rounded-[2px]' : 'rounded-full'
+                    }`}
+                    style={{
+                      left: h.x,
+                      top: h.y,
+                      cursor: h.cursor,
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 

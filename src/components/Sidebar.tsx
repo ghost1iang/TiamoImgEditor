@@ -19,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ core }) => {
     resetWand,
     setDisplaySize,
     setPanOffset,
+    handleSelectHistoryRecord,
   } = core;
 
   // 记录每个历史缩略图的自然像素尺寸 { w, h }
@@ -63,16 +64,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ core }) => {
             return (
               <div 
                 key={item.id} 
-                onClick={() => { 
-                  setCurrentImage(item.url); 
-                  setActiveRecord(item); 
-                  if (item.displaySize) {
-                    setDisplaySize(item.displaySize);
+                onClick={() => {
+                  if (typeof handleSelectHistoryRecord === 'function') {
+                    handleSelectHistoryRecord(item);
                   } else {
-                    setDisplaySize(null);
-                  }
-                  if (item.panOffset) {
-                    setPanOffset(item.panOffset);
+                    setCurrentImage(item.url);
+                    setActiveRecord(item);
+                    setDisplaySize(item.displaySize || null);
+                    if (item.panOffset) {
+                      setPanOffset(item.panOffset);
+                    }
                   }
                 }} 
                 className={`group cursor-pointer border-2 p-1.5 transition-all duration-200 rounded-xl ${activeRecord?.id === item.id ? 'border-indigo-500 bg-indigo-50/50 shadow-sm' : 'border-transparent hover:bg-slate-50'}`}

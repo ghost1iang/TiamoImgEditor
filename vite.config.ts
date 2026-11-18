@@ -2,7 +2,6 @@ import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
-import { exec } from 'child_process';
 
 function formatBuildTime(): string {
   const d = new Date();
@@ -43,24 +42,36 @@ function syncAndTouchVersionFiles(): { version: string; buildTime: string; vTag:
     if (fs.existsSync(rootVersionPath)) {
       vData = JSON.parse(fs.readFileSync(rootVersionPath, 'utf8'));
     }
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[singleVersionPlugin] 读取 version.json 失败，请检查 JSON 语法:', err);
+  }
   try {
     if (fs.existsSync(pkgPath)) {
       pkgData = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     }
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[singleVersionPlugin] 读取 package.json 失败:', err);
+  }
   try {
     if (fs.existsSync(srcVersionTsPath)) {
       const tsText = fs.readFileSync(srcVersionTsPath, 'utf8');
       const m = tsText.match(/SDK_VERSION\s*=[^\n]*?['"]v?(\d+\.\d+\.\d+)['"]/);
       if (m) srcTsVersion = m[1];
     }
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[singleVersionPlugin] 读取 src/version.ts 失败:', err);
+  }
 
-  const candidates = [vData.version, vData.frontend?.version, vData.backend?.version, pkgData?.version, srcTsVersion];
-  let unifiedVer = '1.6.0';
+  const candidates = [vData.version, vData.frontend?.version, vData.backend?.version, pkgData?.version, srcTsVersion]
+    .filter((c): c is string => typeof c === 'string' && /^\d+\.\d+\.\d+$/.test(c.replace(/^[vV]/, '')));
+
+  if (candidates.length === 0) {
+    throw new Error('[singleVersionPlugin] version.json / package.json / src/version.ts 均缺少合法语义化版本号，构建中止！');
+  }
+
+  let unifiedVer = String(candidates[0]).replace(/^[vV]/, '');
   for (const c of candidates) {
-    if (c && c !== 'static' && compareSemverStr(c, unifiedVer) > 0) {
+    if (compareSemverStr(c, unifiedVer) > 0) {
       unifiedVer = String(c).replace(/^[vV]/, '');
     }
   }
@@ -72,8 +83,8 @@ function syncAndTouchVersionFiles(): { version: string; buildTime: string; vTag:
   vData.buildTime = nowStr;
   vData.frontend = { version: unifiedVer, buildTime: nowStr };
   vData.backend = {
-    version: vData.backend?.version === 'static' ? 'static' : unifiedVer,
-    buildTime: nowStr
+    version: unifiedVer,
+    buildTime: nowStr,
   };
 
   fs.writeFileSync(rootVersionPath, JSON.stringify(vData, null, 2) + '\n', 'utf8');
@@ -86,7 +97,9 @@ function syncAndTouchVersionFiles(): { version: string; buildTime: string; vTag:
   let vTag = Date.now();
   try {
     vTag = Math.floor(fs.statSync(rootVersionPath).mtimeMs);
-  } catch (_) {}
+  } catch (statErr) {
+    console.warn('[singleVersionPlugin] 获取 version.json mtimeMs 失败，回退时间戳:', statErr);
+  }
 
   return { version: unifiedVer, buildTime: nowStr, vTag };
 }
@@ -119,7 +132,9 @@ function singleVersionPlugin(): Plugin {
         try {
           const vStat = fs.statSync(rootVersionPath);
           fs.utimesSync(distVPath, vStat.atime, vStat.mtime);
-        } catch (_) {}
+        } catch (utimeErr) {
+          console.warn('[singleVersionPlugin] 同步 dist/version.json 时间戳失败:', utimeErr);
+        }
       }
 
       const umdFile = path.join(distDir, 'tiamo-image-editor.umd.js');
@@ -135,63 +150,26 @@ function singleVersionPlugin(): Plugin {
   };
 }
 
-function terminalLauncherPlugin(): Plugin {
-  return {
-    name: 'terminal-launcher',
-    configureServer(server) {
-      server.middlewares.use('/api/launch-terminal', async (req, res) => {
-        if (req.method === 'POST') {
-          const cwd = process.cwd();
-          
-          exec(`open -a Terminal "${cwd}" && osascript -e 'tell application "Terminal" to activate'`, (err) => {
-            if (err) {
-              console.warn('[Terminal Launcher] Failed to activate Terminal:', err.message);
-              exec(`open -a Terminal "${cwd}"`);
-            }
-          });
-
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({
-            success: true,
-            cwd,
-            command: `cd "${cwd}" && npm run publish:sdk`,
-            shortCommand: 'npm run publish:sdk',
-          }));
-          return;
-        }
-        res.statusCode = 404;
-        res.end();
-      });
-
-      server.middlewares.use('/api/sdk-info', (req, res) => {
-        const cwd = process.cwd();
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({
-          cwd,
-          command: `cd "${cwd}" && npm run publish:sdk`,
-          shortCommand: 'npm run publish:sdk',
-        }));
-      });
-    },
-  };
-}
-
 function distTimestampPlugin(): Plugin {
   return {
     name: 'dist-timestamp',
     transformIndexHtml(html) {
       try {
+        const rootVersionPath = path.resolve(__dirname, 'version.json');
         const umdPath = path.resolve(process.cwd(), 'dist/tiamo-image-editor.umd.js');
-        if (fs.existsSync(umdPath)) {
-          const stat = fs.statSync(umdPath);
-          const timestamp = Math.floor(stat.mtimeMs || stat.ctimeMs);
+        const targetPath = fs.existsSync(rootVersionPath)
+          ? rootVersionPath
+          : (fs.existsSync(umdPath) ? umdPath : null);
+        if (targetPath) {
+          const stat = fs.statSync(targetPath);
+          const vTag = Math.floor(stat.mtimeMs || stat.ctimeMs);
           return html.replace(
-            /(['"]\.\/dist\/tiamo-image-editor\.umd\.js)(\?t=\d+)?(['"])/g,
-            `$1?t=${timestamp}$3`
+            /(['"]\.(?:\/dist\/tiamo-image-editor\.umd\.js|\/js\/[^'"]+|\/css\/[^'"]+))(\?[vt]=[^'"]*)?(['"])/g,
+            `$1?v=${vTag}$3`
           );
         }
       } catch (e) {
-        console.warn('[distTimestampPlugin] Failed to read mtime:', e);
+        console.warn('[distTimestampPlugin] Failed to read physical mtime:', e);
       }
       return html;
     },
@@ -199,18 +177,25 @@ function distTimestampPlugin(): Plugin {
 }
 
 export default defineConfig(({ command }) => {
-  let currentVer = '1.6.0';
+  const rootVersionPath = path.resolve(__dirname, 'version.json');
+  let currentVer = '';
   let buildTime = formatBuildTime();
   try {
-    const vRaw = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'version.json'), 'utf8'));
-    currentVer = vRaw.version || currentVer;
+    const vRaw = JSON.parse(fs.readFileSync(rootVersionPath, 'utf8'));
+    currentVer = vRaw.version || '';
     buildTime = vRaw.buildTime || buildTime;
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[vite.config] 读取根目录 version.json 失败:', err);
+  }
+  if (!currentVer) {
+    const pkgRaw = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
+    currentVer = pkgRaw.version;
+  }
 
   const banner = `/*! TiamoImageEditor v${currentVer} | Build: ${buildTime} | TiamoProject */\n`;
 
   return {
-    plugins: [react(), singleVersionPlugin(), terminalLauncherPlugin(), distTimestampPlugin()],
+    plugins: [react(), singleVersionPlugin(), distTimestampPlugin()],
     define: {
       ...(command === 'build' ? { 'process.env.NODE_ENV': JSON.stringify('production') } : {}),
       '__PROJECT_CWD__': JSON.stringify(process.cwd()),

@@ -47,6 +47,20 @@
       document.body.removeChild(link);
     }
 
+    // 导出并下载独立分层状态 JSON 文件（图片之外另存一份图层数据，便于下次继承恢复）
+    function downloadJsonFile(dataObj, filename = 'tiamo-layers.json') {
+      if (!dataObj) return;
+      const blob = new Blob([JSON.stringify(dataObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
     // 剪贴板复制通用工具
     async function copyText(text) {
       try {
@@ -54,7 +68,9 @@
           await navigator.clipboard.writeText(text);
           return true;
         }
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[workbench] navigator.clipboard.writeText 失败，尝试降级选区复制:', err);
+      }
       try {
         const ta = document.createElement('textarea');
         ta.value = text;
@@ -66,8 +82,18 @@
         const ok = document.execCommand('copy');
         document.body.removeChild(ta);
         if (ok) return true;
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[workbench] execCommand copy 失败:', err);
+      }
       return false;
+    }
+
+    function safeStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (err) {
+        console.warn(`[workbench] 写入 localStorage(${key}) 失败:`, err);
+      }
     }
 
     // 获取全局 SDK 实例
@@ -84,15 +110,27 @@
     // 2. 主工作区大画布挂载与维护
     // ----------------------------------------------------
     let currentMainImage = null;
+    let currentLayerState = null;
 
-    async function mountMainWorkspace(sourceImg) {
+    async function mountMainWorkspace(sourceImg, initialState = null) {
       const editor = getEditor();
       if (!editor || typeof editor.distributed !== 'function') {
-        setTimeout(() => mountMainWorkspace(sourceImg), 120);
+        setTimeout(() => mountMainWorkspace(sourceImg, initialState), 120);
         return;
       }
 
-      currentMainImage = sourceImg;
+      currentMainImage = (initialState && initialState.baseImage) ? initialState.baseImage : sourceImg;
+      currentLayerState = initialState || null;
+
+      // 先经由活跃核心优雅卸载旧 React Root，杜绝 window 监听器泄漏
+      const prevCore = window.__TIAMO_ACTIVE_CORE__;
+      if (prevCore && typeof prevCore.handleCancel === 'function') {
+        try {
+          prevCore.handleCancel();
+        } catch (err) {
+          console.warn('[mountMainWorkspace handleCancel]', err);
+        }
+      }
 
       // 清理历史残留宿主节点
       document.querySelectorAll('[data-sdk-image-editor-host]').forEach(el => el.remove());
@@ -103,27 +141,32 @@
 
       try {
         addLog('[主工作区]', '正在挂载全功能大画布工作区...');
-        const result = await editor.distributed(
+        await editor.distributed(
           '#main-toolbar-container',
           '#main-canvas-container',
-          sourceImg,
+          currentMainImage,
           {
             useShadowDOM: false,
             showComplete: false,
             showCancel: false,
-            visibleTools: getSavedVisibleTools(),
             rejectOnCancel: false,
+            initialState: currentLayerState,
             visibleTools: getSavedVisibleTools(),
-            onComplete: (res) => {
+            onSaveState: (st) => {
+              currentLayerState = st;
+            },
+            onComplete: (res, state) => {
               downloadResult(res);
-              showToast('编辑完成，图片已自动下载保存！');
-              addLog('[主工作区: 保存]', '图片已完成编辑并触发本地导出。', true);
-              // 使用更新后的图片无缝重启工作区
-              if (res instanceof Blob) {
-                mountMainWorkspace(URL.createObjectURL(res));
-              } else if (typeof res === 'string') {
-                mountMainWorkspace(res);
+              const hasLayers = !!(state && Array.isArray(state.graphics) && state.graphics.length > 0);
+              if (hasLayers) {
+                downloadJsonFile(state, 'edited-image.layers.json');
               }
+              showToast(hasLayers ? '编辑完成，已导出图片及独立分层状态数据！' : '编辑完成，图片已自动下载保存！');
+              addLog('[主工作区: 保存]', hasLayers ? '已导出图片并另存 .layers.json 分层状态，下次编辑将自动继承。' : '图片已完成编辑并触发本地导出。', true);
+              const nextImg = (state && state.baseImage)
+                ? state.baseImage
+                : (res instanceof Blob ? URL.createObjectURL(res) : (typeof res === 'string' ? res : currentMainImage));
+              mountMainWorkspace(nextImg, state || null);
             }
           }
         );
@@ -152,10 +195,26 @@
       if (el) el.addEventListener(event, handler);
     }
 
-    // 保存当前图片到本地
+    // 保存当前图片到本地（存在独立图形图层时不拍平破坏当前图层，同时在图片之外另存 .layers.json 状态文件）
     safeOn('btn-save-image', 'click', async () => {
       const activeCore = window.__TIAMO_ACTIVE_CORE__;
-      const targetImg = (activeCore && activeCore.currentImage) ? activeCore.currentImage : currentMainImage;
+      const layerState = (activeCore && typeof activeCore.getLayerState === 'function')
+        ? activeCore.getLayerState()
+        : null;
+      const hasLayers = !!(layerState && Array.isArray(layerState.graphics) && layerState.graphics.length > 0);
+
+      let targetImg = (activeCore && activeCore.currentImage) ? activeCore.currentImage : currentMainImage;
+      if (activeCore && activeCore.currentImage && typeof activeCore.exportResult === 'function') {
+        try {
+          targetImg = await activeCore.exportResult('base64');
+        } catch (err) {
+          console.error('[workbench save exportResult]', err);
+          const errMsg = err?.message || String(err);
+          showToast(`导出合成图片失败，已中止保存: ${errMsg}`);
+          addLog('[主工作区: 导出异常]', `合成导出失败，已中止保存: ${errMsg}`, false, true);
+          return;
+        }
+      }
       if (!targetImg) {
         showToast('当前画布无图片可保存，请先打开图片！');
         return;
@@ -165,7 +224,9 @@
       const d = new Date();
       const timestamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
       const filename = `tiamo-image-${timestamp}.png`;
+      const stateFilename = `tiamo-image-${timestamp}.layers.json`;
 
+      let sharedOk = false;
       try {
         if (navigator.share && navigator.canShare && typeof targetImg === 'string' && targetImg.startsWith('data:image')) {
           const res = await fetch(targetImg);
@@ -173,36 +234,99 @@
           const file = new File([blob], filename, { type: 'image/png' });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], title: filename });
-            showToast('已调起系统分享与保存！');
-            addLog('[主工作区: 导出]', `已调起系统分享: ${filename}`, true);
-            return;
+            sharedOk = true;
           }
         }
       } catch (err) {
         if (err && err.name === 'AbortError') return;
       }
 
-      downloadResult(targetImg, filename);
-      showToast('已成功保存当前图片到本地！');
-      addLog('[主工作区: 导出]', `已导出图片到本地: ${filename}`, true);
+      if (!sharedOk) {
+        downloadResult(targetImg, filename);
+      }
+      if (hasLayers) {
+        downloadJsonFile(layerState, stateFilename);
+      }
+
+      showToast(
+        hasLayers
+          ? `已保存图片与分层数据 (${stateFilename})，下次打开可继承状态！`
+          : (sharedOk ? '已调起系统分享与保存！' : '已成功保存当前图片到本地！')
+      );
+      addLog(
+        '[主工作区: 导出]',
+        hasLayers
+          ? `已导出图片 ${filename} 并另存独立分层状态 ${stateFilename}`
+          : `已导出图片到本地: ${filename}`,
+        true
+      );
     });
 
     // 清空画布
     safeOn('btn-clear-canvas', 'click', () => {
-      mountMainWorkspace(null);
+      mountMainWorkspace(null, null);
       showToast('已清空画布，可拖入或粘贴新图片！');
       addLog('[主工作区]', '已重置为空白画布状态');
     });
 
-    // 打开本地图片
+    // 打开本地图片或 .layers.json 分层状态文件（支持同时选中）
     safeOn('main-file-input', 'change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
+      const files = Array.from((e.target && e.target.files) || []);
+      if (files.length === 0) return;
+
+      const jsonFile = files.find(f => f.name.toLowerCase().endsWith('.json') || f.type === 'application/json');
+      if (jsonFile) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const parsed = JSON.parse(evt.target.result);
+            if (parsed && parsed.type === 'tiamo-image-editor-state' && parsed.baseImage) {
+              mountMainWorkspace(parsed.baseImage, parsed);
+              showToast(`已继承并恢复分层状态：${jsonFile.name}`);
+              addLog('[主工作区: 图层恢复]', `已从 ${jsonFile.name} 恢复底图与 ${(parsed.graphics || []).length} 个独立图层`, true);
+              return;
+            }
+          } catch (err) {
+            console.error('[load layers json]', err);
+          }
+          showToast('图层状态文件格式无效！');
+        };
+        reader.onerror = () => {
+          console.error('[load layers json error]', reader.error);
+          showToast(`读取图层状态文件失败: ${jsonFile.name}`);
+          addLog('[主工作区: 文件异常]', `读取图层状态文件 ${jsonFile.name} 失败`, false, true);
+        };
+        reader.readAsText(jsonFile);
+        e.target.value = '';
+        return;
+      }
+
+      const file = files[0];
+      const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (isPDF) {
+        const activeCore = window.__TIAMO_ACTIVE_CORE__;
+        if (activeCore && typeof activeCore.processFile === 'function') {
+          activeCore.processFile(file);
+          showToast('正在解析 PDF 文档：' + file.name);
+          addLog('[主工作区: PDF]', `已载入 PDF 文件: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, true);
+        } else {
+          showToast('工作区尚未就绪，请稍后重试导入 PDF！');
+          addLog('[主工作区: PDF 异常]', `工作区核心未就绪，无法解析 ${file.name}`, false, true);
+        }
+        e.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (evt) => {
-        mountMainWorkspace(evt.target.result);
+        mountMainWorkspace(evt.target.result, null);
         showToast('已加载本地图片：' + file.name);
         addLog('[主工作区: 文件]', `已导入本地文件: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, true);
+      };
+      reader.onerror = () => {
+        console.error('[load local image error]', reader.error);
+        showToast(`读取本地图片失败: ${file.name}`);
+        addLog('[主工作区: 文件异常]', `读取本地图片 ${file.name} 失败`, false, true);
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -210,7 +334,8 @@
 
     // 剪贴板粘贴直接加载进主画布
     window.addEventListener('paste', (e) => {
-      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      const clipboardData = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
+      const items = clipboardData && clipboardData.items;
       if (!items) return;
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
@@ -221,6 +346,11 @@
               mountMainWorkspace(evt.target.result);
               showToast('已从剪贴板粘贴并载入截图！');
               addLog('[主工作区: 粘贴]', '已从剪贴板成功读取截图并载入画布', true);
+            };
+            reader.onerror = () => {
+              console.error('[paste image error]', reader.error);
+              showToast('读取剪贴板图片失败！');
+              addLog('[主工作区: 粘贴异常]', '从剪贴板读取图片失败', false, true);
             };
             reader.readAsDataURL(blob);
             break;
@@ -348,34 +478,57 @@
       addLog('[模式二: 重置]', '已还原模式二原图');
     });
 
-    // 模式三：分布式测试槽位
+    // 模式三：分布式测试槽位（保存时继承分层状态）
+    let demoDistLayerState = null;
+    let isDemoDistMounted = false;
     safeOn('btn-demo-dist-mount', 'click', async () => {
       const editor = getEditor();
       if (!editor) return;
       addLog('[模式三: 分布式]', '正在挂载至测试槽位...');
       try {
+        isDemoDistMounted = true;
         await editor.distributed(
           '#demo-slot-toolbar',
           '#demo-slot-canvas',
-          demoInplaceImg ? demoInplaceImg.src : null,
+          (demoDistLayerState && demoDistLayerState.baseImage) ? demoDistLayerState.baseImage : (demoInplaceImg ? demoInplaceImg.src : null),
           {
             useShadowDOM: false,
             showComplete: true,
             showCancel: true,
             rejectOnCancel: false,
+            initialState: demoDistLayerState,
             visibleTools: getSavedVisibleTools(),
-            onComplete: (res) => {
-              addLog('[模式三: 完成]', '测试槽位编辑完成！', true);
+            onSaveState: (st) => {
+              demoDistLayerState = st;
+            },
+            onComplete: (res, st) => {
+              isDemoDistMounted = false;
+              if (st) demoDistLayerState = st;
+              addLog('[模式三: 完成]', `测试槽位编辑完成${st && st.graphics && st.graphics.length ? `（已记录 ${st.graphics.length} 个独立图层状态）` : ''}！`, true);
               showToast('分布式插槽编辑完成！');
             }
           }
         );
       } catch (e) {
+        isDemoDistMounted = false;
         addLog('[模式三: 异常]', e.message, false, true);
       }
     });
 
     safeOn('btn-demo-dist-unmount', 'click', () => {
+      if (!isDemoDistMounted) {
+        showToast('测试槽位当前尚未挂载');
+        return;
+      }
+      isDemoDistMounted = false;
+      const demoCore = window.__TIAMO_ACTIVE_CORE__;
+      if (demoCore && typeof demoCore.handleCancel === 'function') {
+        try {
+          demoCore.handleCancel();
+        } catch (err) {
+          console.warn('[demo-dist unmount handleCancel]', err);
+        }
+      }
       const tb = document.getElementById('demo-slot-toolbar');
       const cv = document.getElementById('demo-slot-canvas');
       if (tb) tb.innerHTML = '[宿主工具栏槽位 #demo-slot-toolbar]';
@@ -389,13 +542,13 @@
     const ALL_TOOLS = [
       'rect', 'cropAuto', 'lasso', 'quad', 'invert', 'clear',
       'alphaMask', 'wand', 'wandMode', 'tolerance', 'spillRadius', 'erase',
-      'colorPicker', 'pipette', 'crop', 'fill', 'hd',
+      'colorPicker', 'pipette', 'crop', 'fill', 'hd', 'importGraphic', 'expandCanvas', 'border',
       'flipH', 'flipV', 'rotateCcw', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ];
     const RECOMMEND_TOOLS = [
       'rect', 'cropAuto', 'wand', 'tolerance', 'spillRadius', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
+      'colorPicker', 'pipette', 'crop', 'importGraphic', 'expandCanvas', 'border', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ];
     const CUTOUT_TOOLS = [
@@ -412,19 +565,18 @@
         const saved = localStorage.getItem('tiamo_active_toolbar_tools');
         if (saved) {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr) && arr.length === ALL_TOOLS.length) {
+          if (Array.isArray(arr) && arr.length > 0) {
             return arr;
           }
         }
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[workbench] 读取工具栏显示配置失败:', err);
+      }
       return [...ALL_TOOLS];
     }
 
     function saveAndApplyTools(toolList) {
       const set = new Set(toolList);
-      document.querySelectorAll('.tsd-tool-cb').forEach(cb => {
-        cb.checked = set.has(cb.value);
-      });
       document.querySelectorAll('.modal-tool-cb').forEach(cb => {
         cb.checked = set.has(cb.value);
       });
@@ -440,13 +592,7 @@
       if (ssdCount) {
         ssdCount.textContent = `已选 ${toolList.length}/${ALL_TOOLS.length}`;
       }
-      const tsdBadge = document.getElementById('tsd-count-badge');
-      if (tsdBadge) {
-        tsdBadge.textContent = `已显示 ${toolList.length}/${ALL_TOOLS.length}`;
-      }
-      try {
-        localStorage.setItem('tiamo_active_toolbar_tools', JSON.stringify(toolList));
-      } catch (_) {}
+      safeStorageSet('tiamo_active_toolbar_tools', JSON.stringify(toolList));
       window.dispatchEvent(new CustomEvent('tiamo-set-visible-tools', { detail: toolList }));
       generateVisibleToolsCode();
     }
@@ -456,7 +602,15 @@
       const codeBox = document.getElementById('generated-code-box');
       if (!codeBox) return;
 
-      const codeStr = `// 引入 SDK 后唤起配置：\nconst result = await TiamoImageEditor.edit(targetImage, {\n  mode: 'modal', // 'modal' | 'toolbar' | 'distributed'\n  outputType: 'blob', // 'blob' | 'base64' | 'canvas'\n  visibleTools: ${JSON.stringify(checked, null, 2)}\n});`;
+      const hasImportGraphic = checked.includes('importGraphic');
+      const importHookSnippet = hasImportGraphic
+        ? `,\n  // 可选：拦截工具栏【导入图形】按钮，改为打开宿主自有素材库\n  onRequestImportGraphic: async (importGraphic) => {\n    // const url = await openHostAssetPicker();\n    // return url ? { source: url, options: { w: 240, autoSelect: true } } : null;\n  }`
+        : '';
+      const directCallComment = hasImportGraphic
+        ? `\n\n// 外部宿主素材库直接导入图形至当前活跃画布：\n// await TiamoImageEditor.importGraphic('/assets/stamp.png', { name: '印章', w: 220, autoSelect: true });\n// await TiamoImageEditor.expandCanvas();`
+        : '';
+
+      const codeStr = `// 引入 SDK 后唤起配置：\nconst result = await TiamoImageEditor.edit(targetImage, {\n  mode: 'modal', // 'modal' | 'toolbar' | 'distributed'\n  outputType: 'blob', // 'blob' | 'base64' | 'canvas'\n  visibleTools: ${JSON.stringify(checked, null, 2)}${importHookSnippet}\n});${directCallComment}`;
       codeBox.textContent = codeStr;
     }
 
@@ -498,9 +652,7 @@
           document.querySelectorAll('.ssd-radio-card').forEach(card => card.classList.remove('active'));
           const parent = r.closest('.ssd-radio-card');
           if (parent) parent.classList.add('active');
-          try {
-            localStorage.setItem('tiamo_sdk_pref_mode', r.value);
-          } catch (_) {}
+          safeStorageSet('tiamo_sdk_pref_mode', r.value);
         });
       });
 
@@ -523,9 +675,7 @@
           document.querySelectorAll('.ssd-tag-radio').forEach(t => t.classList.remove('active'));
           const parent = r.closest('.ssd-tag-radio');
           if (parent) parent.classList.add('active');
-          try {
-            localStorage.setItem('tiamo_sdk_pref_format', r.value);
-          } catch (_) {}
+          safeStorageSet('tiamo_sdk_pref_format', r.value);
         });
       });
 
@@ -546,9 +696,7 @@
       if (shadowCb) {
         shadowCb.checked = localStorage.getItem('tiamo_sdk_pref_shadow') === 'true';
         shadowCb.addEventListener('change', () => {
-          try {
-            localStorage.setItem('tiamo_sdk_pref_shadow', shadowCb.checked ? 'true' : 'false');
-          } catch (_) {}
+          safeStorageSet('tiamo_sdk_pref_shadow', shadowCb.checked ? 'true' : 'false');
         });
       }
 
@@ -557,9 +705,7 @@
       if (keyInput) {
         keyInput.value = localStorage.getItem('TIAMO_AI_API_KEY') || '';
         keyInput.addEventListener('input', () => {
-          try {
-            localStorage.setItem('TIAMO_AI_API_KEY', keyInput.value.trim());
-          } catch (_) {}
+          safeStorageSet('TIAMO_AI_API_KEY', keyInput.value.trim());
         });
       }
 
@@ -595,9 +741,7 @@
         if (chip) chip.classList.toggle('active', cbComplete.checked);
         cbComplete.addEventListener('change', () => {
           if (chip) chip.classList.toggle('active', cbComplete.checked);
-          try {
-            localStorage.setItem('tiamo_sdk_pref_complete', cbComplete.checked ? 'true' : 'false');
-          } catch (_) {}
+          safeStorageSet('tiamo_sdk_pref_complete', cbComplete.checked ? 'true' : 'false');
         });
       }
 
@@ -608,9 +752,7 @@
         if (chip) chip.classList.toggle('active', cbCancel.checked);
         cbCancel.addEventListener('change', () => {
           if (chip) chip.classList.toggle('active', cbCancel.checked);
-          try {
-            localStorage.setItem('tiamo_sdk_pref_cancel', cbCancel.checked ? 'true' : 'false');
-          } catch (_) {}
+          safeStorageSet('tiamo_sdk_pref_cancel', cbCancel.checked ? 'true' : 'false');
         });
       }
 
@@ -624,14 +766,21 @@
         const showCancel = cbCancel ? cbCancel.checked : true;
 
         const toolsCode = JSON.stringify(selectedTools, null, 4).replace(/\n/g, '\n    ');
+        const hasImportGraphic = selectedTools.includes('importGraphic');
+        const importHookLine = hasImportGraphic
+          ? `,\n    // 可选：拦截【导入图形】按钮接管宿主素材库\n    onRequestImportGraphic: async (importGraphic) => {\n      // const url = await openHostAssetPicker();\n      // return url;\n    }`
+          : '';
+        const directImportTrailer = hasImportGraphic
+          ? `\n\n// 外部点击宿主素材直接插入画布：\n// await TiamoImageEditor.importGraphic(assetUrl, { name: '素材', w: 240, autoSelect: true });`
+          : '';
 
         let snippet = '';
         if (selectedMode === 'distributed') {
-          snippet = `// 分布式工作台挂载模式 (宿主自定义布局)\nconst result = await TiamoImageEditor.distributed(\n  '#your-toolbar-container',\n  '#your-canvas-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    showComplete: ${showComplete},\n    showCancel: ${showCancel},\n    visibleTools: ${toolsCode},\n    onComplete: (res) => console.log('编辑完成:', res)\n  }\n);`;
+          snippet = `// 分布式工作台挂载模式 (宿主自定义布局)\nconst result = await TiamoImageEditor.distributed(\n  '#your-toolbar-container',\n  '#your-canvas-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    showComplete: ${showComplete},\n    showCancel: ${showCancel},\n    visibleTools: ${toolsCode}${importHookLine},\n    onComplete: (res) => console.log('编辑完成:', res)\n  }\n);${directImportTrailer}`;
         } else if (selectedMode === 'modal') {
-          snippet = `// 全屏居中弹窗模式 (一键调起)\nconst result = await TiamoImageEditor.edit(imageSource, {\n  mode: 'modal',\n  outputType: '${selectedFormat}',\n  useShadowDOM: ${useShadow},\n  showComplete: ${showComplete},\n  showCancel: ${showCancel},\n  visibleTools: ${toolsCode}\n});`;
+          snippet = `// 全屏居中弹窗模式 (一键调起)\nconst result = await TiamoImageEditor.edit(imageSource, {\n  mode: 'modal',\n  outputType: '${selectedFormat}',\n  useShadowDOM: ${useShadow},\n  showComplete: ${showComplete},\n  showCancel: ${showCancel},\n  visibleTools: ${toolsCode}${importHookLine}\n});${directImportTrailer}`;
         } else {
-          snippet = `// 紧凑胶囊工具条模式 (悬浮胶囊)\nconst result = await TiamoImageEditor.toolbar(\n  '#your-container',\n  imageSource,\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    showComplete: ${showComplete},\n    showCancel: ${showCancel},\n    visibleTools: ${toolsCode}\n  }\n);`;
+          snippet = `// 原地浮动工具条模式 (传入目标 <img> / <canvas> DOM 节点)\nconst result = await TiamoImageEditor.toolbar(\n  document.querySelector('#your-target-image'),\n  {\n    outputType: '${selectedFormat}',\n    useShadowDOM: ${useShadow},\n    showComplete: ${showComplete},\n    showCancel: ${showCancel},\n    visibleTools: ${toolsCode}${importHookLine}\n  }\n);${directImportTrailer}`;
         }
 
         const ok = await copyText(snippet);
@@ -671,10 +820,10 @@
       }
     });
 
-    // 复制发布指令
+    // 复制构建指令
     safeOn('btn-copy-publish-cmd', 'click', async () => {
-      const ok = await copyText('npm run publish:sdk');
-      if (ok) showToast('已复制发布脚本指令：npm run publish:sdk');
+      const ok = await copyText('npm run build');
+      if (ok) showToast('已复制构建指令：npm run build');
     });
 
     // 清空日志
@@ -689,7 +838,7 @@
     // ----------------------------------------------------
     function initApp() {
       syncVersionUI();
-      // 默认全选所有工具按钮 (全部 26 个工具默认选上)
+      // 默认全选所有工具按钮 (全部 28 个工具默认选上)
       const initialTools = [...ALL_TOOLS];
       saveAndApplyTools(initialTools);
       mountMainWorkspace(null);

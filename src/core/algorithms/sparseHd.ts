@@ -8,7 +8,7 @@
  */
 
 export function executeSparseHdReconstruction(
-  img: HTMLImageElement,
+  img: HTMLImageElement | HTMLCanvasElement,
   origW: number,
   origH: number,
   targetW: number,

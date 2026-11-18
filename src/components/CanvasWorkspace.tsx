@@ -1,6 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ZoomIn, ZoomOut, Maximize, Loader2, Upload, Eye, Scan, RotateCcw, Check, X } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
+import { EIGHT_POINT_HANDLES } from '../core/algorithms/graphicLayer';
+import {
+  GraphicCanvasItems,
+  GraphicControlFrame,
+} from './GraphicOverlayLayer';
 
 interface CanvasWorkspaceProps {
   core: ImageEditorCore;
@@ -42,7 +47,6 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     polyHoverClose,
     polyMousePos,
     draggingPointIdx,
-    rectDragPoints,
     handleUpload,
     hdBox,
     applySparseHD,
@@ -58,10 +62,33 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     handleApplyOrtho,
     handleResetOrthoPoints,
     setActiveTool,
+    importedGraphics,
+    baseLayerIndex,
+    selectedGraphicId,
+    graphicSnapLines,
+    graphicDragState,
   } = core;
+
+  const clampedBaseLayerIndex = Math.max(0, Math.min(importedGraphics.length, baseLayerIndex ?? 0));
+  const belowGraphics = importedGraphics.slice(0, clampedBaseLayerIndex);
+  const aboveGraphics = importedGraphics.slice(clampedBaseLayerIndex);
+  const selectedGraphic = importedGraphics.find((g) => g.id === selectedGraphicId) || null;
 
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const magnifierCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [imgNaturalSize, setImgNaturalSize] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    const imgEl = imageRef.current;
+    if (imgEl && imgEl.complete && imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0) {
+      setImgNaturalSize({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
+    } else if (!currentImage) {
+      setImgNaturalSize(null);
+    }
+  }, [currentImage, imageRef]);
+
+  const stageNw = imageRef.current?.naturalWidth || imgNaturalSize?.width || 0;
+  const stageNh = imageRef.current?.naturalHeight || imgNaturalSize?.height || 0;
 
   // 放大镜局部高保真像素绘制
   useEffect(() => {
@@ -89,8 +116,8 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       onMouseMove={handleMouseMove} 
       onMouseUp={handleMouseUp} 
       onMouseLeave={() => {
-        // 拖拽/框选/高清放大/正交化过程中由 window 全局监听接管，移出工作区绝不中断拖拽；仅非拖拽时才安全重置
-        if (!core.regionStart && !isPanning && draggingPointIdx === -1 && draggingOrthoIdx === -1 && drawingPath.length === 0 && !core.rectDragPoints && !hdDragHandle) {
+        // 拖拽/框选/高清放大/正交化/导入图形过程中由 window 全局监听接管，移出工作区绝不中断拖拽；仅非拖拽时才安全重置
+        if (!core.regionStart && !isPanning && draggingPointIdx === -1 && draggingOrthoIdx === -1 && drawingPath.length === 0 && !core.rectDragPoints && !hdDragHandle && !graphicDragState) {
           handleMouseUp();
         }
       }}
@@ -259,7 +286,9 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         const maxCenterX = Math.max(minCenterX, wsRect.width - 180);
         const safeCenterX = Math.min(Math.max(boxCenterX, minCenterX), maxCenterX);
 
-        const ratio = Math.round((curBox.w / nw) * 100);
+        const ratioW = Math.round((curBox.w / nw) * 100);
+        const ratioH = Math.round((curBox.h / nh) * 100);
+        const ratioText = ratioW === ratioH ? `${ratioW}%` : `${ratioW}% × ${ratioH}%`;
 
         return (
           <div 
@@ -279,7 +308,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                     <span>正在重构高清像素...</span>
                   </>
                 ) : (
-                  `${Math.round(curBox.w)} × ${Math.round(curBox.h)} px (${ratio}%)`
+                  `${Math.round(curBox.w)} × ${Math.round(curBox.h)} px (${ratioText})`
                 )}
               </span>
 
@@ -333,15 +362,38 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       >
         {currentImage ? (
           <div 
-            className="relative inline-block pointer-events-none" 
+            className="relative inline-block pointer-events-none isolate" 
             style={{ transform: `scale(${zoom}) rotate(${rotationAngle}deg)`, transformOrigin: 'center center' }}
           >
-            <div className={`relative overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] border-4 border-white select-none pointer-events-auto leading-[0] transition-colors ${showAlphaMask ? 'alpha-mask-bg' : 'bg-white/5'}`}>
+            {/* 位于底图下方的导入图形图层 */}
+            {stageNw > 0 && stageNh > 0 && belowGraphics.length > 0 && (
+              <div className="absolute inset-[4px] pointer-events-none z-0">
+                <GraphicCanvasItems
+                  graphics={belowGraphics}
+                  selectedId={selectedGraphicId}
+                  naturalWidth={stageNw}
+                  naturalHeight={stageNh}
+                  snapLines={graphicSnapLines}
+                  interactive={!activeTool}
+                  zIndexClass="z-0"
+                  showSnapLines={false}
+                />
+              </div>
+            )}
+
+            <div className={`relative z-10 overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] border-4 border-white select-none pointer-events-auto leading-[0] transition-colors ${showAlphaMask ? 'alpha-mask-bg' : 'bg-white/5'}`}>
               <img 
                 ref={imageRef} 
                 src={isComparingOriginal && hdOriginalImage ? hdOriginalImage : currentImage} 
                 alt="Workspace" 
                 draggable="false" 
+                onLoad={(e) => {
+                  const nw = e.currentTarget.naturalWidth;
+                  const nh = e.currentTarget.naturalHeight;
+                  if (nw > 0 && nh > 0) {
+                    setImgNaturalSize({ width: nw, height: nh });
+                  }
+                }}
                 className={`max-w-none select-none pointer-events-auto ${isLoading ? 'blur-xl opacity-30' : 'opacity-100'}`} 
                 style={displaySize ? { width: `${displaySize.width}px`, height: `${displaySize.height}px`, maxWidth: 'none', maxHeight: 'none' } : { maxHeight: '70vh' }} 
               />
@@ -539,6 +591,32 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
               )}
             </div>
 
+            {/* 位于底图上方的导入图形图层、对齐辅助线与 8 点触控操作框 (位于 overflow-hidden 外部，与 imageRef 内边距对齐，拖出画布外依然完整显示与可交互) */}
+            {stageNw > 0 && stageNh > 0 && (aboveGraphics.length > 0 || graphicSnapLines.x !== null || graphicSnapLines.y !== null || (!activeTool && selectedGraphic)) && (
+              <div className="absolute inset-[4px] pointer-events-none z-20">
+                {(aboveGraphics.length > 0 || graphicSnapLines.x !== null || graphicSnapLines.y !== null) && (
+                  <GraphicCanvasItems
+                    graphics={aboveGraphics}
+                    selectedId={selectedGraphicId}
+                    naturalWidth={stageNw}
+                    naturalHeight={stageNh}
+                    snapLines={graphicSnapLines}
+                    interactive={!activeTool}
+                    zIndexClass="z-20"
+                    showSnapLines={true}
+                  />
+                )}
+                {!activeTool && selectedGraphic && (
+                  <GraphicControlFrame
+                    graphic={selectedGraphic}
+                    naturalWidth={stageNw}
+                    naturalHeight={stageNh}
+                    zoom={zoom}
+                  />
+                )}
+              </div>
+            )}
+
             {/* 稀疏高清 8 点控制框 (位于 overflow-hidden 外部，放大拖拽不被裁切) */}
             {activeTool === 'hd' && hdBox && imageRef.current && (() => {
               const nw = imageRef.current.naturalWidth;
@@ -551,17 +629,6 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
               const topPct = isDragging ? (hdBox.y / nh) * 100 : 0;
               const widthPct = isDragging ? (hdBox.w / nw) * 100 : 100;
               const heightPct = isDragging ? (hdBox.h / nh) * 100 : 100;
-
-              const handles = [
-                { id: 'nw', x: '0%', y: '0%', cursor: 'nwse-resize' },
-                { id: 'n', x: '50%', y: '0%', cursor: 'ns-resize' },
-                { id: 'ne', x: '100%', y: '0%', cursor: 'nesw-resize' },
-                { id: 'e', x: '100%', y: '50%', cursor: 'ew-resize' },
-                { id: 'se', x: '100%', y: '100%', cursor: 'nwse-resize' },
-                { id: 's', x: '50%', y: '100%', cursor: 'ns-resize' },
-                { id: 'sw', x: '0%', y: '100%', cursor: 'nesw-resize' },
-                { id: 'w', x: '0%', y: '50%', cursor: 'ew-resize' },
-              ];
 
               return (
                 <div 
@@ -576,12 +643,21 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                   {/* 高清外框边框 */}
                   <div className="absolute inset-0 border-2 border-dashed border-amber-500 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.25)]" />
 
-                  {/* 8 个控制手柄 */}
-                  {handles.map(h => (
+                  {/* 8 个控制手柄：四角方形固定比例，左右圆形调宽，上下圆形调高 */}
+                  {EIGHT_POINT_HANDLES.map(h => (
                     <div
                       key={h.id}
                       data-hd-handle={h.id}
-                      className="absolute w-3.5 h-3.5 bg-white border-2 border-amber-600 rounded-sm shadow-md pointer-events-auto transition-transform hover:scale-125"
+                      title={
+                        h.isCorner
+                          ? '等比缩放 (固定宽高比例)'
+                          : h.id === 'e' || h.id === 'w'
+                            ? '增加宽度'
+                            : '增加高度'
+                      }
+                      className={`absolute w-3.5 h-3.5 bg-white border-2 border-amber-600 shadow-md pointer-events-auto transition-transform hover:scale-125 ${
+                        h.isCorner ? 'rounded-[2px]' : 'rounded-full'
+                      }`}
                       style={{
                         left: h.x,
                         top: h.y,
@@ -605,7 +681,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
               <Upload size={14} />
               <span>选择本地文件</span>
             </span>
-            <input type="file" accept="image/*,application/pdf" onChange={handleUpload} className="hidden" />
+            <input type="file" accept="image/*,application/pdf,.json" onChange={handleUpload} className="hidden" />
           </label>
         )}
       </div>

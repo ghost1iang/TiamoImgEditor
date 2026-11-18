@@ -24,7 +24,20 @@ import {
   Scan,
   Focus,
   SunMedium,
-  CircleDot
+  CircleDot,
+  ImagePlus,
+  Maximize2,
+  Check,
+  Trash2,
+  Layers,
+  SquareDashed,
+  ArrowUpToLine,
+  ArrowUp,
+  ArrowDown,
+  ArrowDownToLine,
+  Lock,
+  Unlock,
+  AlertTriangle
 } from 'lucide-react';
 import { ImageEditorCore } from '../core/useImageEditorCore';
 import { ToolbarToolId, resolveVisibleTools } from '../types/toolbar';
@@ -370,10 +383,140 @@ const SpillRadiusPopover: React.FC<SpillRadiusPopoverProps> = ({
       </div>
 
       {/* 提示文案 */}
-      <div className="text-[9px] text-slate-400 leading-tight border-t border-slate-100 dark:border-slate-800 pt-1.5">
-        {isAll
-          ? '⚠️ 当前为全图模式，全屏所有符合色相特征的像素均会受到消色边影响。'
-          : `✅ 橡皮擦擦除时，仅对交界处外沿 ${radius} 像素过渡带消解背景溢色，保护主体内部颜色不受影响。`}
+      <div className="flex items-start gap-1.5 text-[9px] text-slate-400 leading-tight border-t border-slate-100 dark:border-slate-800 pt-1.5">
+        {isAll ? (
+          <AlertTriangle size={11} className="text-amber-500 shrink-0 mt-0.5" />
+        ) : (
+          <Check size={11} className="text-emerald-500 shrink-0 mt-0.5" />
+        )}
+        <span>
+          {isAll
+            ? '当前为全图模式，全屏所有符合色相特征的像素均会受到消色边影响。'
+            : `橡皮擦擦除时，仅对交界处外沿 ${radius} 像素过渡带消解背景溢色，保护主体内部颜色不受影响。`}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+interface BorderWidthPopoverProps {
+  borderWidth: number;
+  onChange: (w: number) => void;
+  onClose: () => void;
+  top: number;
+  left: number;
+  arrowOffset: number;
+  popoverRef: React.RefObject<HTMLDivElement>;
+  isCompact?: boolean;
+}
+
+const BorderWidthPopover: React.FC<BorderWidthPopoverProps> = ({
+  borderWidth,
+  onChange,
+  onClose,
+  top,
+  left,
+  arrowOffset,
+  popoverRef,
+  isCompact = false,
+}) => {
+  return (
+    <div
+      ref={popoverRef}
+      style={{
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${left}px`,
+        zIndex: 1000000,
+      }}
+      className={`w-[260px] rounded-2xl shadow-2xl p-3 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-150 select-none backdrop-blur-xl ${
+        isCompact 
+          ? 'bg-slate-900/95 text-white border border-slate-700/80' 
+          : 'bg-white/95 text-slate-800 border border-slate-200/90 shadow-slate-900/10'
+      }`}
+    >
+      {/* 顶部小箭头对齐按钮 */}
+      <div
+        className={`absolute -top-1 w-2.5 h-2.5 border-t border-l ${
+          isCompact 
+            ? 'bg-slate-900 border-slate-700/80' 
+            : 'bg-white border-slate-200'
+        }`}
+        style={{
+          left: `${Math.max(14, Math.min(arrowOffset, 246))}px`,
+          transform: 'translateX(-50%) rotate(45deg)',
+        }}
+      />
+
+      {/* 头部标题与关闭 */}
+      <div className={`w-full flex items-center justify-between pb-1 border-b text-xs font-bold ${
+        isCompact ? 'border-slate-800 text-slate-300' : 'border-slate-100 text-slate-700'
+      }`}>
+        <span className="flex items-center gap-1.5 text-indigo-600">
+          <SquareDashed size={13} />
+          <span>边框宽度调节</span>
+        </span>
+        <button
+          onClick={onClose}
+          className={`p-0.5 rounded transition-colors ${
+            isCompact ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'
+          }`}
+          title="关闭"
+        >
+          <X size={13} />
+        </button>
+      </div>
+
+      {/* 主体拉把调节区 */}
+      <div className="flex flex-col gap-1.5 pt-0.5">
+        <div className="flex items-center justify-between text-xs font-semibold">
+          <span className={isCompact ? 'text-slate-400' : 'text-slate-500'}>
+            边框宽度 (PX)
+          </span>
+          <span className="font-mono text-indigo-600 font-bold bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded text-[11px] border border-indigo-200/50 dark:border-indigo-800/50">
+            {borderWidth} PX
+          </span>
+        </div>
+
+        {/* 滑动拉把 */}
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            type="range"
+            min="1"
+            max="64"
+            step="1"
+            value={borderWidth}
+            onChange={(e) => onChange(Number(e.target.value) || 1)}
+            className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+          />
+        </div>
+
+        {/* 预设快捷尺寸 */}
+        <div className="flex items-center justify-between gap-1 pt-1.5">
+          {[2, 4, 8, 12, 16, 24, 32].map((sz) => (
+            <button
+              key={sz}
+              type="button"
+              onClick={() => onChange(sz)}
+              className={`flex-1 py-0.5 text-[10px] font-mono rounded border transition-all ${
+                borderWidth === sz
+                  ? 'bg-indigo-600 text-white border-indigo-600 font-bold shadow-xs'
+                  : isCompact
+                    ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-indigo-600'
+              }`}
+            >
+              {sz}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 说明文案 */}
+      <div className={`text-[10px] leading-relaxed pt-1 border-t ${
+        isCompact ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-400'
+      }`}>
+        沿着有效像素最外层轮廓向外延展添加指定宽度的平滑边框。
       </div>
     </div>
   );
@@ -406,13 +549,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     currentImage,
     activeTool,
     setActiveTool,
-    selectionRegion,
-    setSelectionRegion,
     isRegionInverted,
-    setIsRegionInverted,
     toggleInvertSelection,
     clearSelection,
-    quadPoints,
     setQuadPoints,
     isPolyClosed,
     setIsPolyClosed,
@@ -424,16 +563,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     setTolerance,
     spillRadius,
     setSpillRadius,
-    deSpillGreen,
-    setDeSpillGreen,
-    applyDeSpillGreen,
-    sampledColor,
     imageRef,
     handleCropTransparency,
     handleAutoDetectOrtho,
     handleApplyDeShadow,
     fillColor,
     setFillColor,
+    borderColor,
+    setBorderColor,
+    borderWidth,
+    setBorderWidth,
+    handleApplyBorder,
     hasSelection,
     handleFillSelection,
     handleCropSelection,
@@ -443,16 +583,29 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     handleFlipHorizontal,
     handleFlipVertical,
     handleRotate90,
-    handleApplyQuadCrop,
-    commitFinalCrop,
-    maskCanvas,
-    handleInvertSelection,
     handleEraseSelection,
     applyWandCutout,
+    importedGraphics,
+    baseLayerIndex,
+    selectedGraphicId,
+    setSelectedGraphicId,
+    handleImportGraphicFile,
+    handleTriggerImportGraphic,
+    hasCustomImportGraphicHandler,
+    handleGraphicFlip,
+    handleGraphicRotate90,
+    handleGraphicLayerOrder,
+    handleLockSelectedGraphic,
+    handleUnlockAllGraphics,
+    handleDeleteSelectedGraphic,
+    commitImportedGraphics,
+    handleExpandCanvas,
     isLoading,
+    handleFinish: coreFinish,
     handleCancel: coreCancel,
   } = core;
 
+  const handleFinishClick = onFinish || coreFinish;
   const handleCancelClick = onCancel || coreCancel;
 
   const isCompact = mode === 'toolbar';
@@ -530,6 +683,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const spillRadiusPopoverRef = useRef<HTMLDivElement>(null);
   const [showSpillRadiusPopover, setShowSpillRadiusPopover] = useState(false);
   const [spillRadiusPopoverPos, setSpillRadiusPopoverPos] = useState<{ top: number; left: number; arrowOffset: number }>({ top: 0, left: 0, arrowOffset: 135 });
+
+  const borderWidthBtnRef = useRef<HTMLButtonElement>(null);
+  const borderWidthPopoverRef = useRef<HTMLDivElement>(null);
+  const [showBorderWidthPopover, setShowBorderWidthPopover] = useState(false);
+  const [borderWidthPopoverPos, setBorderWidthPopoverPos] = useState<{ top: number; left: number; arrowOffset: number }>({ top: 0, left: 0, arrowOffset: 130 });
+
+  const importGraphicInputRef = useRef<HTMLInputElement>(null);
 
   const getPopoverPortalTarget = (): HTMLElement => {
     const root = toolbarRef.current?.getRootNode();
@@ -686,6 +846,52 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     return () => window.removeEventListener('pointerdown', handlePointerDown);
   }, [showSpillRadiusPopover]);
 
+  // 边框宽度拉把浮窗位置自适应
+  useEffect(() => {
+    if (showBorderWidthPopover && borderWidthBtnRef.current) {
+      const updatePos = () => {
+        if (!borderWidthBtnRef.current) return;
+        const btnRect = borderWidthBtnRef.current.getBoundingClientRect();
+        const popoverWidth = 260;
+        const viewportW = window.innerWidth || document.documentElement.clientWidth;
+        const btnCenterX = btnRect.left + btnRect.width / 2;
+        let left = btnCenterX - popoverWidth / 2;
+        const maxLeft = Math.max(8, viewportW - popoverWidth - 8);
+        left = Math.max(8, Math.min(left, maxLeft));
+        setBorderWidthPopoverPos({
+          top: btnRect.bottom + 8,
+          left,
+          arrowOffset: btnCenterX - left,
+        });
+      };
+      updatePos();
+      window.addEventListener('resize', updatePos);
+      window.addEventListener('scroll', updatePos, true);
+      return () => {
+        window.removeEventListener('resize', updatePos);
+        window.removeEventListener('scroll', updatePos, true);
+      };
+    }
+  }, [showBorderWidthPopover]);
+
+  // 点击外部关闭边框宽度浮窗
+  useEffect(() => {
+    if (!showBorderWidthPopover) return;
+
+    const handlePointerDown = (e: MouseEvent | PointerEvent) => {
+      const path = (e.composedPath ? e.composedPath() : []) as Node[];
+      const inPopover = borderWidthPopoverRef.current && (path.includes(borderWidthPopoverRef.current) || borderWidthPopoverRef.current.contains(e.target as Node));
+      const inBtn = borderWidthBtnRef.current && (path.includes(borderWidthBtnRef.current) || borderWidthBtnRef.current.contains(e.target as Node));
+
+      if (!inPopover && !inBtn) {
+        setShowBorderWidthPopover(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => window.removeEventListener('pointerdown', handlePointerDown);
+  }, [showBorderWidthPopover]);
+
   // 计算各个分组是否有可见工具（用于整组容器的自适应渲染）
   const hasSelectionTools = 
     visibleTools.has('rect') || 
@@ -709,7 +915,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   const hasColorTools = visibleTools.has('colorPicker') || visibleTools.has('pipette');
 
-  const hasActionTools = visibleTools.has('crop') || visibleTools.has('fill') || visibleTools.has('erase') || visibleTools.has('hd');
+  const hasBorderTools = visibleTools.has('border');
+
+  const hasActionTools = visibleTools.has('crop') || visibleTools.has('fill') || visibleTools.has('erase') || visibleTools.has('hd') || visibleTools.has('importGraphic') || visibleTools.has('expandCanvas');
 
   const hasTransformTools = 
     visibleTools.has('flipH') || 
@@ -721,6 +929,36 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     visibleTools.has('orthoAuto') ||
     visibleTools.has('deShadow');
 
+  const selectedGraphicIndex = selectedGraphicId
+    ? importedGraphics.findIndex((g) => g.id === selectedGraphicId)
+    : -1;
+  const selectedGraphic = selectedGraphicIndex !== -1 ? importedGraphics[selectedGraphicIndex] : null;
+  const clampedBaseIdx = Math.max(0, Math.min(importedGraphics.length, baseLayerIndex ?? 0));
+  const selectedStackPos =
+    selectedGraphicIndex !== -1
+      ? selectedGraphicIndex < clampedBaseIdx
+        ? selectedGraphicIndex
+        : selectedGraphicIndex + 1
+      : -1;
+  const isGraphicAtTop = selectedStackPos === importedGraphics.length;
+  const isGraphicAtBottom = selectedStackPos === 0;
+  const lockedCount = importedGraphics.filter((g) => !!g.locked).length;
+
+  useEffect(() => {
+    if (selectedGraphicId) {
+      setShowSpillRadiusPopover(false);
+      setShowBorderWidthPopover(false);
+    }
+  }, [selectedGraphicId]);
+
+  const triggerImportGraphic = () => {
+    if (hasCustomImportGraphicHandler) {
+      void handleTriggerImportGraphic();
+    } else {
+      importGraphicInputRef.current?.click();
+    }
+  };
+
   // 载入图片后，工具栏与其包含的全部SDK按钮（含工具栏设置）才一并出现
   if (!currentImage) {
     return null;
@@ -728,8 +966,279 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <div ref={toolbarRef} className={`relative flex items-center justify-between ${isCompact ? 'p-1.5 bg-slate-900/90 text-white rounded-2xl shadow-2xl backdrop-blur-md border border-white/20' : 'h-10 px-2 bg-white/90 backdrop-blur-md border-b border-slate-200 z-30 shrink-0 text-slate-800'}`}>
-      {/* 核心编辑工具组 */}
+      {/* 隐藏文件选择器（普通模式与选中图形模式共用） */}
+      <input
+        ref={importGraphicInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleImportGraphicFile(file);
+          }
+          e.target.value = '';
+        }}
+      />
+
+      {/* 核心编辑工具组：选中导入图形时切换为仅对其生效的上下文工具栏，失焦后恢复原始工具栏 */}
       <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1 mr-2">
+        {selectedGraphic ? (
+          <>
+            {/* 选中图形标识与尺寸 */}
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border shrink-0 text-[10px] font-bold ${isCompact ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300' : 'bg-indigo-50 border-indigo-200 text-indigo-700'}`}>
+              <Layers size={12} strokeWidth={2.5} />
+              <span>已选图形</span>
+              <span className="font-mono opacity-80">
+                {Math.round(selectedGraphic.w)}×{Math.round(selectedGraphic.h)}
+              </span>
+            </div>
+
+            {/* 1. 图形变换工具组：左右镜像、上下镜像、逆时针90°、顺时针90° */}
+            <div className={`flex items-center p-0.5 border gap-0.5 shrink-0 rounded-lg shadow-inner ${isCompact ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+              <button
+                type="button"
+                onClick={() => handleGraphicFlip('flipH')}
+                disabled={isLoading}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-slate-200 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="左右镜像选中图形"
+              >
+                <FlipHorizontal2 size={12} />
+                <span className="text-[10px] font-bold">左右镜像</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleGraphicFlip('flipV')}
+                disabled={isLoading}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-slate-200 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="上下镜像选中图形"
+              >
+                <FlipVertical2 size={12} />
+                <span className="text-[10px] font-bold">上下镜像</span>
+              </button>
+
+              <div className={`w-px h-3 mx-0.5 ${isCompact ? 'bg-slate-700' : 'bg-slate-300'}`} />
+
+              <button
+                type="button"
+                onClick={() => handleGraphicRotate90('ccw')}
+                disabled={isLoading}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-slate-200 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="逆时针旋转 90°"
+              >
+                <RotateCcw size={12} />
+                <span className="text-[10px] font-bold">逆时针90°</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleGraphicRotate90('cw')}
+                disabled={isLoading}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-slate-200 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                title="顺时针旋转 90°"
+              >
+                <RotateCw size={12} />
+                <span className="text-[10px] font-bold">顺时针90°</span>
+              </button>
+            </div>
+
+            {/* 2. 图层层级排列组：最顶、上一层、下一层、最底（支持与底图穿插叠放） */}
+            <div className={`flex items-center p-0.5 border gap-0.5 shrink-0 rounded-lg shadow-inner ${isCompact ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+              <button
+                type="button"
+                onClick={() => handleGraphicLayerOrder('front')}
+                disabled={isLoading || isGraphicAtTop}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all disabled:opacity-35 disabled:cursor-not-allowed ${isCompact ? 'text-slate-200 enabled:hover:bg-slate-700 enabled:hover:text-white' : 'text-slate-600 enabled:hover:bg-white enabled:hover:text-indigo-600'}`}
+                title="置于最顶层"
+              >
+                <ArrowUpToLine size={12} />
+                <span className="text-[10px] font-bold">最顶</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleGraphicLayerOrder('forward')}
+                disabled={isLoading || isGraphicAtTop}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all disabled:opacity-35 disabled:cursor-not-allowed ${isCompact ? 'text-slate-200 enabled:hover:bg-slate-700 enabled:hover:text-white' : 'text-slate-600 enabled:hover:bg-white enabled:hover:text-indigo-600'}`}
+                title="上移一层"
+              >
+                <ArrowUp size={12} />
+                <span className="text-[10px] font-bold">上一层</span>
+              </button>
+
+              <div className={`w-px h-3 mx-0.5 ${isCompact ? 'bg-slate-700' : 'bg-slate-300'}`} />
+
+              <button
+                type="button"
+                onClick={() => handleGraphicLayerOrder('backward')}
+                disabled={isLoading || isGraphicAtBottom}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all disabled:opacity-35 disabled:cursor-not-allowed ${isCompact ? 'text-slate-200 enabled:hover:bg-slate-700 enabled:hover:text-white' : 'text-slate-600 enabled:hover:bg-white enabled:hover:text-indigo-600'}`}
+                title="下移一层（可移至底图下方）"
+              >
+                <ArrowDown size={12} />
+                <span className="text-[10px] font-bold">下一层</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleGraphicLayerOrder('back')}
+                disabled={isLoading || isGraphicAtBottom}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all disabled:opacity-35 disabled:cursor-not-allowed ${isCompact ? 'text-slate-200 enabled:hover:bg-slate-700 enabled:hover:text-white' : 'text-slate-600 enabled:hover:bg-white enabled:hover:text-indigo-600'}`}
+                title="置于最底层（底图下方最底）"
+              >
+                <ArrowDownToLine size={12} />
+                <span className="text-[10px] font-bold">最底</span>
+              </button>
+            </div>
+
+            {/* 3. 图层与画布动作组：扩展画布、边框、继续导入、融合、删除、取消选中 */}
+            <div className={`flex items-center p-0.5 border gap-1 shrink-0 rounded-lg shadow-inner ${isCompact ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+              <button
+                type="button"
+                onClick={handleExpandCanvas}
+                disabled={isLoading}
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-sky-600 hover:bg-sky-700 text-white shadow-sm active:scale-95 transition-all cursor-pointer"
+                title="扩展画布 (将所有元素的外边框取最大值生成新的画布)"
+              >
+                <Maximize2 size={12} strokeWidth={2.5} />
+                <span className="text-[10px] font-bold">扩展画布</span>
+              </button>
+
+              {visibleTools.has('border') && (
+                <div className="flex items-center gap-0.5">
+                  <div className="relative flex items-center justify-center p-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer" title="选择边框颜色">
+                    <input
+                      type="color"
+                      value={borderColor}
+                      onChange={(e) => setBorderColor(e.target.value)}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                      title="选择边框颜色"
+                    />
+                    <div className="w-5 h-5 rounded border border-white/50 shadow-sm" style={{ backgroundColor: borderColor }} />
+                  </div>
+
+                  <button
+                    ref={borderWidthBtnRef}
+                    type="button"
+                    onClick={() => {
+                      setShowBorderWidthPopover((v) => !v);
+                      setShowSpillRadiusPopover(false);
+                      setShowSettingsPopover(false);
+                    }}
+                    className={`flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                      showBorderWidthPopover
+                        ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400'
+                        : isCompact
+                          ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                          : 'text-slate-600 hover:bg-white hover:text-indigo-600 hover:shadow-xs'
+                    }`}
+                    title="调节边框宽度 (PX)"
+                  >
+                    <span className={`px-1 py-0.2 rounded text-[10px] font-mono ${
+                      showBorderWidthPopover
+                        ? 'bg-indigo-700 text-white'
+                        : isCompact
+                          ? 'bg-slate-800 text-indigo-400'
+                          : 'bg-slate-100 text-indigo-600 border border-indigo-100'
+                    }`}>
+                      {borderWidth} PX
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowBorderWidthPopover(false);
+                      handleApplyBorder();
+                    }}
+                    disabled={isLoading}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                      !isLoading
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md active:scale-95 cursor-pointer'
+                        : 'opacity-30 cursor-not-allowed pointer-events-none text-slate-400'
+                    }`}
+                    title="为当前选中图形有效像素最外层添加边框"
+                  >
+                    <SquareDashed size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold">边框</span>
+                  </button>
+                </div>
+              )}
+
+              {visibleTools.has('importGraphic') && (
+                <button
+                  type="button"
+                  onClick={triggerImportGraphic}
+                  disabled={isLoading}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-slate-200 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                  title="继续导入新的图形"
+                >
+                  <ImagePlus size={12} strokeWidth={2.5} />
+                  <span className="text-[10px] font-bold">导入图形</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleLockSelectedGraphic}
+                disabled={isLoading}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-600 hover:text-white' : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 hover:text-amber-800'}`}
+                title="锁定当前图形（锁定后不能移动和缩放，也不响应任何鼠标事件，避免遮挡下方元素编辑）"
+              >
+                <Lock size={12} strokeWidth={2.5} />
+                <span className="text-[10px] font-bold">锁定</span>
+              </button>
+
+              {lockedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleUnlockAllGraphics}
+                  disabled={isLoading}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'bg-slate-700 text-amber-300 hover:bg-slate-600 hover:text-white' : 'bg-white text-amber-700 border border-amber-200 hover:bg-amber-50'}`}
+                  title={`解锁全部 ${lockedCount} 个已锁定图层`}
+                >
+                  <Unlock size={12} strokeWidth={2.5} />
+                  <span className="text-[10px] font-bold">解锁({lockedCount})</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={commitImportedGraphics}
+                disabled={isLoading}
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm active:scale-95 transition-all cursor-pointer"
+                title="仅将当前选中图形这一层融合到底图（融合后与底图一起成为最底一层，其余未融合图层保留）"
+              >
+                <Check size={12} strokeWidth={2.5} />
+                <span className="text-[10px] font-bold">融合</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteSelectedGraphic}
+                disabled={isLoading}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-rose-400 hover:bg-rose-950/60 hover:text-rose-300' : 'text-rose-600 hover:bg-white hover:text-rose-700'}`}
+                title="删除选中图形"
+              >
+                <Trash2 size={12} />
+                <span className="text-[10px] font-bold">删除</span>
+              </button>
+
+              <div className={`w-px h-3 mx-0.5 ${isCompact ? 'bg-slate-700' : 'bg-slate-300'}`} />
+
+              <button
+                type="button"
+                onClick={() => setSelectedGraphicId(null)}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${isCompact ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-500 hover:bg-white hover:text-slate-800'}`}
+                title="取消选中图形并恢复原始工具栏 (也可点击画布空白处或按 Esc)"
+              >
+                <XCircle size={12} />
+                <span className="text-[10px] font-bold">完成调整</span>
+              </button>
+            </div>
+          </>
+        ) : (
         <>
             {/* 1. 选区范围工具组 */}
             {hasSelectionTools && (
@@ -939,7 +1448,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             )}
 
             {/* 4. 独立选区执行操作组: 剪裁 & 油漆桶着色 */}
-            {hasActionTools && (
+            {(hasActionTools || lockedCount > 0) && (
               <div className={`flex items-center p-0.5 border gap-1 shrink-0 rounded-lg shadow-inner ${isCompact ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
                 {visibleTools.has('crop') && (
                   <button 
@@ -999,12 +1508,123 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                           ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
                           : 'text-slate-600 hover:bg-white hover:text-amber-600'
                     }`} 
-                    title="稀疏高清重构 (等比拖拽外框 8 点控制放大，松开自动高清化)"
+                    title="稀疏高清重构 (四角固定比例缩放，左右调宽、上下调高，松开自动高清化)"
                   >
                     <Sparkles size={12} strokeWidth={2.5} />
                     <span className="text-[10px] font-bold">高清</span>
                   </button>
                 )}
+
+                {visibleTools.has('importGraphic') && (
+                  <button
+                    type="button"
+                    onClick={triggerImportGraphic}
+                    disabled={isLoading}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                      isCompact
+                        ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                        : 'text-slate-600 hover:bg-white hover:text-indigo-600'
+                    }`}
+                    title="导入图形 (导入新图片并叠加在画布上，支持 8 点触控吸附缩放、吸附移动、镜像及正负 90° 旋转)"
+                  >
+                    <ImagePlus size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold">导入图形</span>
+                  </button>
+                )}
+
+                {visibleTools.has('expandCanvas') && (
+                  <button
+                    type="button"
+                    onClick={handleExpandCanvas}
+                    disabled={importedGraphics.length === 0 || isLoading}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                      importedGraphics.length > 0 && !isLoading
+                        ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-md active:scale-95 cursor-pointer'
+                        : 'opacity-30 cursor-not-allowed pointer-events-none text-slate-400'
+                    }`}
+                    title={importedGraphics.length > 0 ? "扩展画布 (将所有元素的外边框取最大值生成新的画布)" : "请先导入图形后再扩展画布"}
+                  >
+                    <Maximize2 size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold">扩展画布</span>
+                  </button>
+                )}
+
+                {lockedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleUnlockAllGraphics}
+                    disabled={isLoading}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-amber-500 hover:bg-amber-600 text-white shadow-md active:scale-95 transition-all cursor-pointer"
+                    title={`画布中有 ${lockedCount} 个已锁定图层（不响应鼠标），点击全部解锁恢复编辑`}
+                  >
+                    <Unlock size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] font-bold">解锁({lockedCount})</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 边框功能组 */}
+            {hasBorderTools && (
+              <div className={`flex items-center p-0.5 border gap-1 shrink-0 rounded-lg shadow-inner ${isCompact ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+                {/* 1. 颜色选择（复用铺色的色彩选择界面） */}
+                <div className="relative flex items-center px-1" title="选择边框颜色">
+                  <input 
+                    type="color" 
+                    value={borderColor} 
+                    onChange={(e) => setBorderColor(e.target.value)} 
+                    className="w-5 h-5 border-0 p-0 cursor-pointer opacity-0 absolute inset-0 z-10" 
+                  />
+                  <div className="w-5 h-5 rounded border border-white/50 shadow-sm" style={{ backgroundColor: borderColor }} />
+                </div>
+
+                {/* 2. 宽度显示 "xx PX"，点击后出现拉把 */}
+                <button
+                  ref={borderWidthBtnRef}
+                  type="button"
+                  onClick={() => {
+                    setShowBorderWidthPopover((v) => !v);
+                    setShowSpillRadiusPopover(false);
+                    setShowSettingsPopover(false);
+                  }}
+                  className={`flex items-center gap-1 px-1.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                    showBorderWidthPopover
+                      ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400'
+                      : isCompact
+                        ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                        : 'text-slate-600 hover:bg-white hover:text-indigo-600 hover:shadow-xs'
+                  }`}
+                  title="调节边框宽度 (PX)"
+                >
+                  <span className={`px-1 py-0.2 rounded text-[10px] font-mono ${
+                    showBorderWidthPopover
+                      ? 'bg-indigo-700 text-white'
+                      : isCompact
+                        ? 'bg-slate-800 text-indigo-400'
+                        : 'bg-slate-100 text-indigo-600 border border-indigo-100'
+                  }`}>
+                    {borderWidth} PX
+                  </span>
+                </button>
+
+                {/* 3. 执行添加边框按钮 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBorderWidthPopover(false);
+                    handleApplyBorder();
+                  }}
+                  disabled={isLoading}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                    !isLoading
+                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md active:scale-95 cursor-pointer'
+                      : 'opacity-30 cursor-not-allowed pointer-events-none text-slate-400'
+                  }`}
+                  title="沿着有效像素最外层添加指定宽度与颜色的边框"
+                >
+                  <SquareDashed size={12} strokeWidth={2.5} />
+                  <span className="text-[10px] font-bold">边框</span>
+                </button>
               </div>
             )}
 
@@ -1131,10 +1751,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               </div>
             )}
           </>
+        )}
       </div>
 
-      {/* 右侧动作按钮组 (设置与取消) */}
-      {(visibleTools.has('settings') || showCancel) && (
+      {/* 右侧动作按钮组 (设置、完成与取消) */}
+      {(visibleTools.has('settings') || showComplete || showCancel) && (
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {/* 工具栏设置按钮 (SDK内置工具) */}
           {visibleTools.has('settings') && (
@@ -1151,6 +1772,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               title="工具栏设置 (自定义哪些按钮显示或隐藏)"
             >
               <Settings size={14} />
+            </button>
+          )}
+
+          {/* SDK 完成按钮 */}
+          {showComplete && (
+            <button
+              type="button"
+              onClick={handleFinishClick}
+              disabled={isLoading}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-bold shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+              title="完成编辑并保存返回结果"
+            >
+              <Check size={13} strokeWidth={2.5} />
+              <span>完成</span>
             </button>
           )}
 
@@ -1197,6 +1832,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           left={spillRadiusPopoverPos.left}
           arrowOffset={spillRadiusPopoverPos.arrowOffset}
           popoverRef={spillRadiusPopoverRef}
+          isCompact={isCompact}
+        />,
+        getPopoverPortalTarget()
+      )}
+
+      {/* 边框宽度拉把浮窗 (Portal 脱离父级 overflow 裁剪) */}
+      {showBorderWidthPopover && createPortal(
+        <BorderWidthPopover
+          borderWidth={borderWidth}
+          onChange={(val) => setBorderWidth(val)}
+          onClose={() => setShowBorderWidthPopover(false)}
+          top={borderWidthPopoverPos.top}
+          left={borderWidthPopoverPos.left}
+          arrowOffset={borderWidthPopoverPos.arrowOffset}
+          popoverRef={borderWidthPopoverRef}
           isCompact={isCompact}
         />,
         getPopoverPortalTarget()

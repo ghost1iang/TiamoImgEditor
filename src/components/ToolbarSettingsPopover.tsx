@@ -27,11 +27,13 @@ import {
   Scan,
   Focus,
   SunMedium,
-  CircleDot
+  CircleDot,
+  ImagePlus,
+  Maximize2,
+  SquareDashed
 } from 'lucide-react';
 import { 
   ToolbarToolId, 
-  ToolbarCategoryKey,
   ALL_TOOLBAR_TOOLS, 
   TOOLBAR_CATEGORIES,
   DEFAULT_VISIBLE_TOOL_IDS
@@ -56,6 +58,9 @@ const TOOL_ICONS: Record<ToolbarToolId, React.ReactNode> = {
   crop: <Scissors size={13} />,
   fill: <PaintBucket size={13} />,
   hd: <Sparkles size={13} />,
+  importGraphic: <ImagePlus size={13} />,
+  expandCanvas: <Maximize2 size={13} />,
+  border: <SquareDashed size={13} />,
   flipH: <FlipHorizontal2 size={13} />,
   flipV: <FlipVertical2 size={13} />,
   rotateCcw: <RotateCcw size={13} />,
@@ -97,7 +102,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   const applyRecommended = () => {
     onSetTools([
       'rect', 'cropAuto', 'wand', 'tolerance', 'spillRadius', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
+      'colorPicker', 'pipette', 'crop', 'importGraphic', 'expandCanvas', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ]);
   };
