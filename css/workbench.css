@@ -19,7 +19,9 @@
 
   /* --- 文本色阶 (Text) --- */
   --text-main: #0f172a;              /* 主标题、正文强调：slate-900 */
+  --text-heading: #0f172a;           /* 标题别名 */
   --text-regular: #334155;           /* 正文常规：slate-700 */
+  --text-body: #334155;              /* 正文别名 */
   --text-muted: #64748b;             /* 辅助说明、占位符：slate-500 */
   --text-disabled: #94a3b8;          /* 禁用态文本：slate-400 */
 
@@ -1278,7 +1280,8 @@ body {
   font-weight: 600;
 }
 
-.btn-code-copy {
+.btn-code-copy,
+.btn-copy-script {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1297,7 +1300,8 @@ body {
   background: var(--brand-primary-hover);
 }
 
-.code-pre {
+.code-pre,
+.code-box {
   padding: 1rem 1.25rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   font-size: 0.78rem;
@@ -1380,7 +1384,8 @@ body {
 }
 
 /* 日志控制台 */
-.log-terminal {
+.log-terminal,
+.console-terminal {
   background: #0f172a;
   border: 1px solid #1e293b;
   border-radius: 12px;

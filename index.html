@@ -79,7 +79,7 @@
   </script>
 
   <!-- 真实 SDK 产物加载（由 vite.config.ts distTimestampPlugin / 中央部署基于 version.json 物理 mtime 注入稳定版本参数） -->
-  <script src="./dist/tiamo-image-editor.umd.js?v=1.7.12"></script>
+  <script src="./dist/tiamo-image-editor.umd.js?v=1.7.13"></script>
 
   <!-- Tiamo Design System 字体体系 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -87,7 +87,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- 工作台自适应样式 -->
-  <link rel="stylesheet" href="./css/workbench.css?v=1.7.12" />
+  <link rel="stylesheet" href="./css/workbench.css?v=1.7.13" />
 </head>
 <body>
 
@@ -109,7 +109,7 @@
         <span class="brand-pill">图像编辑工作台</span>
         <div class="version-indicator" id="top-version-badge" title="当前版本与状态">
           <span class="status-dot-pulse"></span>
-          <span id="top-version-text">v1.7.11</span>
+          <span id="top-version-text">v1.7.12</span>
         </div>
       </div>
     </div>
@@ -225,10 +225,10 @@
           <div class="ssd-section">
             <div class="ssd-tools-header">
               <div class="ssd-section-label">带入 SDK 的按钮与功能</div>
-              <span class="ssd-count-badge" id="ssd-selected-count">已选 28/28</span>
+              <span class="ssd-count-badge" id="ssd-selected-count">已选 29/29</span>
             </div>
             <div class="ssd-quick-presets">
-              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (28)</button>
+              <button type="button" class="ssd-preset-chip" id="ssd-preset-all">全部 (29)</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-recommend">常用推荐</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-cutout">纯抠图</button>
               <button type="button" class="ssd-preset-chip" id="ssd-preset-transform">几何旋转</button>
@@ -266,7 +266,7 @@
                   <label class="ssd-tool-chip active"><input type="checkbox" class="ssd-tool-cb" value="pipette" checked /><span>吸管取色</span></label>
                 </div>
               </div>
-              <!-- 剪裁擦除组 (6) -->
+              <!-- 剪裁擦除组 (7) -->
               <div class="ssd-group-block">
                 <div class="ssd-group-label">剪裁擦除组</div>
                 <div class="ssd-tool-chips">
@@ -422,12 +422,12 @@
       <!-- 置顶一键下载与快速引入区 -->
       <div class="sdk-download-banner">
         <div class="download-meta">
-          <span class="meta-tag" id="modal-ver-tag">版本: v1.7.11</span>
+          <span class="meta-tag" id="modal-ver-tag">版本: v1.7.12</span>
           <span class="meta-tag">产物大小: ~280 KB</span>
           <span class="meta-tag">标准产物: tiamo-image-editor.umd.js</span>
         </div>
         <div class="download-btn-group">
-          <a href="./dist/tiamo-image-editor.umd.js?v=1.7.12" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
+          <a href="./dist/tiamo-image-editor.umd.js?v=1.7.13" download="tiamo-image-editor.umd.js" class="btn-download-file" id="btn-download-umd-file" title="直接下载单文件 UMD SDK 产物">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="7 10 12 15 17 10"/>
@@ -554,8 +554,8 @@
                 <div style="font-size:0.78rem;color:#64748b;">预设常见场景或自定义勾选，实时生成 <code>visibleTools</code> 配置参数代码</div>
               </div>
               <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
-                <button class="top-action-btn" id="modal-preset-all">全部显示 (28)</button>
-                <button class="top-action-btn" id="modal-preset-recommend">常用推荐 (17)</button>
+                <button class="top-action-btn" id="modal-preset-all">全部显示 (29)</button>
+                <button class="top-action-btn" id="modal-preset-recommend">常用推荐 (18)</button>
                 <button class="top-action-btn" id="modal-preset-cutout">纯抠图方案 (8)</button>
                 <button class="top-action-btn" id="modal-preset-transform">几何与旋转 (12)</button>
                 <button class="top-action-btn" id="modal-preset-clear">清空</button>
@@ -694,6 +694,6 @@ await TiamoImageEditor.edit(imgElement, {
   <!-- ======================================================== -->
   <!-- 工作台业务逻辑脚本 -->
   <!-- ======================================================== -->
-  <script type="module" src="./js/workbench.js?v=1.7.12"></script>
+  <script type="module" src="./js/workbench.js?v=1.7.13"></script>
 </body>
 </html>

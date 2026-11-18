@@ -239,6 +239,9 @@
         }
       } catch (err) {
         if (err && err.name === 'AbortError') return;
+        console.error('[navigator.share]', err);
+        addLog('[系统分享: 异常]', err ? err.message : String(err), false, true);
+        showToast('系统分享异常: ' + (err ? err.message : '未知错误'));
       }
 
       if (!sharedOk) {
@@ -384,7 +387,7 @@
 
     // 复制引入代码
     safeOn('btn-copy-script-tag', 'click', async () => {
-      const scriptCode = '<script src="./libs/tiamo-image-editor.umd.js"><\/script>\n<script>\n  // 单行唤起原生图片编辑\n  TiamoImageEditor.edit(document.querySelector("#my-image"));\n<\/script>';
+      const scriptCode = '<script src="./dist/tiamo-image-editor.umd.js"><\/script>\n<script>\n  // 单行唤起原生图片编辑\n  TiamoImageEditor.edit(document.querySelector("#my-image"));\n<\/script>';
       const ok = await copyText(scriptCode);
       if (ok) showToast('已成功复制 SDK 引入代码！');
     });
@@ -838,7 +841,7 @@
     // ----------------------------------------------------
     function initApp() {
       syncVersionUI();
-      // 默认全选所有工具按钮 (全部 28 个工具默认选上)
+      // 默认全选所有工具按钮 (全部 29 个工具默认选上)
       const initialTools = [...ALL_TOOLS];
       saveAndApplyTools(initialTools);
       mountMainWorkspace(null);

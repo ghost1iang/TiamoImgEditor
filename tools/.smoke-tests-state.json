@@ -12,38 +12,44 @@
     "running": false,
     "logs": [
       {
-        "time": "23:42:07",
+        "time": "01:40:45",
         "agent": "SYSTEM",
         "msg": "已提取 19 个改动代码文件并完成本地静态规则扫描。",
         "level": "info"
       },
       {
-        "time": "23:42:07",
+        "time": "01:40:45",
         "agent": "COORDINATOR",
         "msg": "已唤醒 wait-action 监听进程，等待 AI 会话读 diff 并调用 submit-review 回写报告。",
         "level": "info"
       },
       {
-        "time": "00:57:58",
-        "agent": "COORDINATOR",
-        "msg": "已唤醒 wait-action 监听进程，单独下发【用例完善者】任务。",
+        "time": "01:57:04",
+        "agent": "codeReviewer",
+        "msg": "已写回报告：6项需求契约与多边形法向外扩（Miter Joint尖角闭合）均已在源码层真实闭环实现，无空 catch 吞异常或虚假兜底；padRight/padBottom 1px 冗余、displaySize 重置、handleFinish try/catch 及文案计数小瑕已彻底修复。",
         "level": "info"
       },
       {
-        "time": "01:01:21",
-        "agent": "caseRefiner",
-        "msg": "已写回报告：交互走查闭环并新增有效边框用例 SMOKE-07-01；历史 4 项阻断缺陷（SMOKE-01-01、01-05、02-01、06-01）完成全链路交互走查与修复复核，用例矩阵拓扑演进为 28 项全部通过",
+        "time": "01:57:12",
+        "agent": "archReviewer",
+        "msg": "已写回报告：架构与安全红线审查全部通过：前序发现的两处 Fail-Silent 缺陷已完成整改，workbench.js navigator.share 区分取消与系统异常报错，useImageEditorCore.ts 自动寻角移除虚假 Mock 四边形并显式 Fail-Fast 报错；无 SSH、无 Emoji 图标、无未经授权的 npm 外部依赖。",
         "level": "info"
       },
       {
-        "time": "01:08:53",
-        "agent": "caseRefiner",
-        "msg": "已写回报告：差量扫描完成：新增 SMOKE-07-01 有效边框用例，闭环 4 项历史阻断用例，全量 28 项用例全部通过",
+        "time": "01:57:19",
+        "agent": "smokeTester",
+        "msg": "已写回报告：冒烟测试全景走查全部通过：SMOKE-01-05E 日志控制台暗底高亮样式已通过 .console-terminal 别名修复对齐，全量 35 项测试用例静态推演与物理调用链路核验 100% 成立闭环。",
+        "level": "info"
+      },
+      {
+        "time": "01:57:25",
+        "agent": "hygieneInspector",
+        "msg": "已写回报告：代码卫生巡查全部通过：死代码（deSpillGreen/applyDeSpillGreen、parseColorToRgba）已彻底清除，CSS 变量 --text-heading / --text-body 已定义，版本号与工具数量全量同步对齐至 1.7.12 与 29/18 项。",
         "level": "info"
       }
     ],
-    "lastRunTime": "2026-11-19 01:09:00",
-    "startTime": "2026-11-19 00:57:58",
+    "lastRunTime": "2026-11-19 01:57:25",
+    "startTime": "2026-11-19 01:40:45",
     "locked": true,
     "userInputNote": "1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承",
     "selectedDocSpecs": [],
@@ -97,11 +103,11 @@
       "src/components/GraphicOverlayLayer.tsx",
       "src/core/algorithms/graphicLayer.ts"
     ],
-    "prompt": "【阶段 3.1 四权分立双盲审查与代码推演】\n- 目标工程: TiamoImgEditor (/Users/leonhe/Documents/TiamoProject/TiamoImgEditor)\n- 需求契约靶心: 1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n- 物理改动代码文件 (19 个): README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n- 关联架构规约: 全局 AGENTS.md 基础规范\n- 抽查业务用例数: 27 项 | 活跃卫生隐患: 0 项\n\n请主控并行调用 invoke_subagent 拉起以下 4 个独立只读 Subagent（严禁主控自审或编造结论）：\n\n--- [1/4] TypeName: \"code-reviewer\" | Role: \"探路监督官\" ---\n【指令：请调用 invoke_subagent 工具调起独立 Subagent】\n请当前主控必须调用 invoke_subagent 工具调起独立 Subagent 执行任务（严禁主控自审或在当前主线程直接回答）：\n- TypeName: \"code-reviewer\" (若尚未注册，请先调用 define_subagent 注册或使用 inherit)\n- Role: \"探路监督官 (Code Reviewer)\"\n\n[1/4] 任务目标双盲检查\n执行人：code-reviewer（探路监督官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n单次审查比对靶心（目标需求契约）：\n1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n\n⚠️【审查靶心最高指令 - 严格直接对比上述契约，严禁对比 tools/TASK.md】：\n1、本次双盲审查的唯一合法需求基准，100% 严格直接对比上方填写的【目标需求契约（单次审查比对靶心）】！\n2、绝对严禁擅自去读取、检索或对比 tools/TASK.md 文件（tools/TASK.md 属于全局/历史任务文件，不是本次单次审查的靶心）！\n3、任务执行结果：通过 git status / git diff 与物理源码进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）。\n4、检查目标：直接对比物理执行结果和上述【目标需求契约】：\n   ① 上述目标需求契约中列出的各项诉求在代码中是否真实实现；\n   ② 是否存在为实现上述需求而引入的未清理废弃/错误方案；\n   ③ 是否存在假性自愈与虚假兜底（如空 catch 吞异常、mock 假数据、虚假成功日志等）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [2/4] TypeName: \"arch-reviewer\" | Role: \"合规看门狗\" ---\n[2/4] 项目标准合规检查\n执行人：arch-reviewer（合规看门狗）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n必选对照规范：AGENTS.md\n额外对照规范：无（默认全部不选以节省 Token）\n任务执行结果：通过 git status / git diff 进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）\n检查目标：对比执行结果和所选规范列表\n1、实现结果是否符合规范\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [3/4] TypeName: \"smoke-tester\" | Role: \"思想测试官\" ---\n[3/4] 模拟冒烟测试\n执行人：smoke-tester（思想测试官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n测试用例：共勾选 27 项受控用例（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - [SMOKE-01-01] 统一健康检测探针与版本号展示 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-02] 顶栏「打开本地图片」与剪贴板 Ctrl+V 粘贴截图 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-03] 顶栏「保存到本地」导出图片与独立 .layers.json 分层数据 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-04] 顶栏「清空画布」重置工作区状态 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-05] 顶栏「获取 SDK」开发者中心弹窗与三大模式在线演示 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-06] 顶栏齿轮「SDK 接入与系统设置」下拉面板与工具预设切换 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-02-01] 空白画布点击/拖拽上传图片、PDF 高清解析与 .layers.json 状态恢复 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-02] 画布缩放控制器（放大/缩小/重置）与拖拽平移 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-03] 矩形范围、索套范围、多边范围框选与实时物理坐标胶囊 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-04] 「智能修边」自动检测非透明像素最小外接矩形 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-05] 选区「反选」与「清除选区」状态切换 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-03-01] 「透明检测」红网格背景对比开关 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-02] 「魔棒选色」点击取样、全屏/连通切换与容差滑块调节 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-03] 去色边「影响范围」拉把调节与「选区擦除」局部消色边 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-04] 调色板选色、吸管取色与选区「着色」填充 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - ... 其余 12 项用例请读取 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json\n任务执行方式：\n1、遍历上述所有已勾选用例，严禁增删或篡改用例，严禁启动浏览器或跑自动化 UI 脚本；\n2、若 git status / git diff 改动文件列表与该用例已建立的源码调用链（fileIndex）无交集，且链路有效，可直接判定通过；若用例尚未建立有效源码路径，不得盲目直接通过，须标为待核查；\n3、若存在交集，沿用例调用链逐层读取物理源码做静态白盒推演（Mental Trace），核查状态污染、参数兼容、边界空值与时序副作用，确认主流程仍可跑通并达成用例预期结果。\n检查目标：\n如实输出逐项白盒推演结果（PASS / WARN / FAIL）；若发现阻断或破坏须明确指出，待修复复核后直至全部用例真实通过（严禁未核查强行标 PASS）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [4/4] TypeName: \"hygiene-inspector\" | Role: \"卫生巡查员\" ---\n[4/4] 代码卫生清理\n执行人：hygiene-inspector（卫生巡查员）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n卫生隐患：共 0 项活跃未解决 [HYGIENE-*] 清单（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - （当前活跃隐患库为空，请重点核查本次改动是否新引入冗余或死代码）\n任务执行方式：对照上述隐患清单与 git status / git diff 及物理源码（若子代理无命令行权限，由主控预先提取 diff 附带传入）：\n1、存量隐患逐条核验：仅当物理源码中确认要求清理的死代码、冗余控件或陈旧逻辑已彻底消失时，方可记为【已闭环清除】，否则一律记为【仍待清理】，严禁虚假核销；\n2、新增冗余排查：核查本次物理改动是否新引入临时调试 console.log、死变量、废弃函数或重复死代码。\n检查目标：核查活跃卫生隐患是否已真实解决，输出《代码卫生与冗余清理进度报告》（明确列出【已闭环清除】与【仍待清理】项）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n【汇总与回写规范】\n四位 Subagent 返回后，请将结构化报告写入临时 JSON（包含 reports: { codeReviewer, archReviewer, smokeTester, hygieneInspector }，每项含 { status, summary, items }）并执行：\nnode /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js submit-review --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900 --file <report.json>\n回写完成后，重新挂起监听等待下一轮指令：node /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js wait-action --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900",
+    "prompt": "【阶段 3.1 四权分立双盲审查与代码推演】\n- 目标工程: TiamoImgEditor (/Users/leonhe/Documents/TiamoProject/TiamoImgEditor)\n- 需求契约靶心: 1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n- 物理改动代码文件 (19 个): README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n- 关联架构规约: 全局 AGENTS.md 基础规范\n- 抽查业务用例数: 27 项 | 活跃卫生隐患: 0 项\n\n请主控并行调用 invoke_subagent 拉起以下 4 个独立只读 Subagent（严禁主控自审或编造结论）：\n\n--- [1/4] TypeName: \"code-reviewer\" | Role: \"探路监督官\" ---\n【指令：请调用 invoke_subagent 工具调起独立 Subagent】\n请当前主控必须调用 invoke_subagent 工具调起独立 Subagent 执行任务（严禁主控自审或在当前主线程直接回答）：\n- TypeName: \"code-reviewer\" (若尚未注册，请先调用 define_subagent 注册或使用 inherit)\n- Role: \"探路监督官 (Code Reviewer)\"\n\n[1/4] 任务目标双盲检查\n执行人：code-reviewer（探路监督官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n单次审查比对靶心（目标需求契约）：\n1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n\n⚠️【审查靶心最高指令 - 严格直接对比上述契约，严禁对比 tools/TASK.md】：\n1、本次双盲审查的唯一合法需求基准，100% 严格直接对比上方填写的【目标需求契约（单次审查比对靶心）】！\n2、绝对严禁擅自去读取、检索或对比 tools/TASK.md 文件（tools/TASK.md 属于全局/历史任务文件，不是本次单次审查的靶心）！\n3、任务执行结果：通过 git status / git diff 与物理源码进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）。\n4、检查目标：直接对比物理执行结果和上述【目标需求契约】：\n   ① 上述目标需求契约中列出的各项诉求在代码中是否真实实现；\n   ② 是否存在为实现上述需求而引入的未清理废弃/错误方案；\n   ③ 是否存在假性自愈与虚假兜底（如空 catch 吞异常、mock 假数据、虚假成功日志等）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [2/4] TypeName: \"arch-reviewer\" | Role: \"合规看门狗\" ---\n[2/4] 项目标准合规检查\n执行人：arch-reviewer（合规看门狗）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n必选对照规范：AGENTS.md\n额外对照规范：无（默认全部不选以节省 Token）\n任务执行结果：通过 git status / git diff 进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）\n检查目标：对比执行结果和所选规范列表\n1、实现结果是否符合规范\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [3/4] TypeName: \"smoke-tester\" | Role: \"思想测试官\" ---\n[3/4] 模拟冒烟测试\n执行人：smoke-tester（思想测试官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n测试用例：共勾选 27 项受控用例（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - [SMOKE-01-01] 统一健康检测探针与版本号展示 (工作台顶栏)\n  - [SMOKE-01-02] 顶栏「打开本地图片」与剪贴板 Ctrl+V 粘贴截图 (工作台顶栏)\n  - [SMOKE-01-03] 顶栏「保存到本地」导出图片与独立 .layers.json 分层数据 (工作台顶栏)\n  - [SMOKE-01-04] 顶栏「清空画布」重置工作区状态 (工作台顶栏)\n  - [SMOKE-01-05] 顶栏「获取 SDK」开发者中心 - 一键下载 UMD SDK 产物文件 (SDK开发者中心)\n  - [SMOKE-01-06] 顶栏齿轮「SDK 接入与系统设置」下拉面板与工具预设切换 (工作台顶栏)\n  - [SMOKE-02-01] 空白画布点击/拖拽上传图片、PDF 高清解析与 .layers.json 状态恢复 (画布功能)\n  - [SMOKE-02-02] 画布缩放控制器（放大/缩小/重置）与拖拽平移 (画布功能)\n  - [SMOKE-02-03] 矩形范围、索套范围、多边范围框选与实时物理坐标胶囊 (选区工具)\n  - [SMOKE-02-04] 「智能修边」自动检测非透明像素最小外接矩形 (选区工具)\n  - [SMOKE-02-05] 选区「反选」与「清除选区」状态切换 (选区工具)\n  - [SMOKE-03-01] 「透明检测」红网格背景对比开关 (像素操作)\n  - [SMOKE-03-02] 「魔棒选色」点击取样、全屏/连通切换与容差滑块调节 (像素操作)\n  - [SMOKE-03-03] 去色边「影响范围」拉把调节与「选区擦除」局部消色边 (像素操作)\n  - [SMOKE-03-04] 调色板选色、吸管取色与选区「着色」填充 (像素操作)\n  - ... 其余 12 项用例请读取 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json\n任务执行方式：\n1、遍历上述所有已勾选用例，严禁增删或篡改用例，严禁启动浏览器或跑自动化 UI 脚本；\n2、若 git status / git diff 改动文件列表与该用例已建立的源码调用链（fileIndex）无交集，且链路有效，可直接判定通过；若用例尚未建立有效源码路径，不得盲目直接通过，须标为待核查；\n3、若存在交集，沿用例调用链逐层读取物理源码做静态白盒推演（Mental Trace），核查状态污染、参数兼容、边界空值与时序副作用，确认主流程仍可跑通并达成用例预期结果。\n检查目标：\n如实输出逐项白盒推演结果（PASS / WARN / FAIL）；若发现阻断或破坏须明确指出，待修复复核后直至全部用例真实通过（严禁未核查强行标 PASS）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [4/4] TypeName: \"hygiene-inspector\" | Role: \"卫生巡查员\" ---\n[4/4] 代码卫生清理\n执行人：hygiene-inspector（卫生巡查员）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n卫生隐患：共 0 项活跃未解决 [HYGIENE-*] 清单（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - （当前活跃隐患库为空，请重点核查本次改动是否新引入冗余或死代码）\n任务执行方式：对照上述隐患清单与 git status / git diff 及物理源码（若子代理无命令行权限，由主控预先提取 diff 附带传入）：\n1、存量隐患逐条核验：仅当物理源码中确认要求清理的死代码、冗余控件或陈旧逻辑已彻底消失时，方可记为【已闭环清除】，否则一律记为【仍待清理】，严禁虚假核销；\n2、新增冗余排查：核查本次物理改动是否新引入临时调试 console.log、死变量、废弃函数或重复死代码。\n检查目标：核查活跃卫生隐患是否已真实解决，输出《代码卫生与冗余清理进度报告》（明确列出【已闭环清除】与【仍待清理】项）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n【汇总与回写规范】\n四位 Subagent 返回后，请将结构化报告写入临时 JSON（包含 reports: { codeReviewer, archReviewer, smokeTester, hygieneInspector }，每项含 { status, summary, items }）并执行：\nnode /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js submit-review --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900 --file <report.json>\n回写完成后，重新挂起监听等待下一轮指令：node /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js wait-action --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900",
     "subagentTasks": {
       "codeReviewer": "【指令：请调用 invoke_subagent 工具调起独立 Subagent】\n请当前主控必须调用 invoke_subagent 工具调起独立 Subagent 执行任务（严禁主控自审或在当前主线程直接回答）：\n- TypeName: \"code-reviewer\" (若尚未注册，请先调用 define_subagent 注册或使用 inherit)\n- Role: \"探路监督官 (Code Reviewer)\"\n\n[1/4] 任务目标双盲检查\n执行人：code-reviewer（探路监督官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n单次审查比对靶心（目标需求契约）：\n1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n\n⚠️【审查靶心最高指令 - 严格直接对比上述契约，严禁对比 tools/TASK.md】：\n1、本次双盲审查的唯一合法需求基准，100% 严格直接对比上方填写的【目标需求契约（单次审查比对靶心）】！\n2、绝对严禁擅自去读取、检索或对比 tools/TASK.md 文件（tools/TASK.md 属于全局/历史任务文件，不是本次单次审查的靶心）！\n3、任务执行结果：通过 git status / git diff 与物理源码进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）。\n4、检查目标：直接对比物理执行结果和上述【目标需求契约】：\n   ① 上述目标需求契约中列出的各项诉求在代码中是否真实实现；\n   ② 是否存在为实现上述需求而引入的未清理废弃/错误方案；\n   ③ 是否存在假性自愈与虚假兜底（如空 catch 吞异常、mock 假数据、虚假成功日志等）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。",
       "archReviewer": "[2/4] 项目标准合规检查\n执行人：arch-reviewer（合规看门狗）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n必选对照规范：AGENTS.md\n额外对照规范：无（默认全部不选以节省 Token）\n任务执行结果：通过 git status / git diff 进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）\n检查目标：对比执行结果和所选规范列表\n1、实现结果是否符合规范\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。",
-      "smokeTester": "[3/4] 模拟冒烟测试\n执行人：smoke-tester（思想测试官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n测试用例：共勾选 27 项受控用例（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - [SMOKE-01-01] 统一健康检测探针与版本号展示 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-02] 顶栏「打开本地图片」与剪贴板 Ctrl+V 粘贴截图 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-03] 顶栏「保存到本地」导出图片与独立 .layers.json 分层数据 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-04] 顶栏「清空画布」重置工作区状态 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-05] 顶栏「获取 SDK」开发者中心弹窗与三大模式在线演示 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-06] 顶栏齿轮「SDK 接入与系统设置」下拉面板与工具预设切换 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-02-01] 空白画布点击/拖拽上传图片、PDF 高清解析与 .layers.json 状态恢复 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-02] 画布缩放控制器（放大/缩小/重置）与拖拽平移 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-03] 矩形范围、索套范围、多边范围框选与实时物理坐标胶囊 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-04] 「智能修边」自动检测非透明像素最小外接矩形 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-05] 选区「反选」与「清除选区」状态切换 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-03-01] 「透明检测」红网格背景对比开关 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-02] 「魔棒选色」点击取样、全屏/连通切换与容差滑块调节 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-03] 去色边「影响范围」拉把调节与「选区擦除」局部消色边 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-04] 调色板选色、吸管取色与选区「着色」填充 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - ... 其余 12 项用例请读取 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json\n任务执行方式：\n1、遍历上述所有已勾选用例，严禁增删或篡改用例，严禁启动浏览器或跑自动化 UI 脚本；\n2、若 git status / git diff 改动文件列表与该用例已建立的源码调用链（fileIndex）无交集，且链路有效，可直接判定通过；若用例尚未建立有效源码路径，不得盲目直接通过，须标为待核查；\n3、若存在交集，沿用例调用链逐层读取物理源码做静态白盒推演（Mental Trace），核查状态污染、参数兼容、边界空值与时序副作用，确认主流程仍可跑通并达成用例预期结果。\n检查目标：\n如实输出逐项白盒推演结果（PASS / WARN / FAIL）；若发现阻断或破坏须明确指出，待修复复核后直至全部用例真实通过（严禁未核查强行标 PASS）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。",
+      "smokeTester": "[3/4] 模拟冒烟测试\n执行人：smoke-tester（思想测试官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n测试用例：共勾选 27 项受控用例（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - [SMOKE-01-01] 统一健康检测探针与版本号展示 (工作台顶栏)\n  - [SMOKE-01-02] 顶栏「打开本地图片」与剪贴板 Ctrl+V 粘贴截图 (工作台顶栏)\n  - [SMOKE-01-03] 顶栏「保存到本地」导出图片与独立 .layers.json 分层数据 (工作台顶栏)\n  - [SMOKE-01-04] 顶栏「清空画布」重置工作区状态 (工作台顶栏)\n  - [SMOKE-01-05] 顶栏「获取 SDK」开发者中心 - 一键下载 UMD SDK 产物文件 (SDK开发者中心)\n  - [SMOKE-01-06] 顶栏齿轮「SDK 接入与系统设置」下拉面板与工具预设切换 (工作台顶栏)\n  - [SMOKE-02-01] 空白画布点击/拖拽上传图片、PDF 高清解析与 .layers.json 状态恢复 (画布功能)\n  - [SMOKE-02-02] 画布缩放控制器（放大/缩小/重置）与拖拽平移 (画布功能)\n  - [SMOKE-02-03] 矩形范围、索套范围、多边范围框选与实时物理坐标胶囊 (选区工具)\n  - [SMOKE-02-04] 「智能修边」自动检测非透明像素最小外接矩形 (选区工具)\n  - [SMOKE-02-05] 选区「反选」与「清除选区」状态切换 (选区工具)\n  - [SMOKE-03-01] 「透明检测」红网格背景对比开关 (像素操作)\n  - [SMOKE-03-02] 「魔棒选色」点击取样、全屏/连通切换与容差滑块调节 (像素操作)\n  - [SMOKE-03-03] 去色边「影响范围」拉把调节与「选区擦除」局部消色边 (像素操作)\n  - [SMOKE-03-04] 调色板选色、吸管取色与选区「着色」填充 (像素操作)\n  - ... 其余 12 项用例请读取 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json\n任务执行方式：\n1、遍历上述所有已勾选用例，严禁增删或篡改用例，严禁启动浏览器或跑自动化 UI 脚本；\n2、若 git status / git diff 改动文件列表与该用例已建立的源码调用链（fileIndex）无交集，且链路有效，可直接判定通过；若用例尚未建立有效源码路径，不得盲目直接通过，须标为待核查；\n3、若存在交集，沿用例调用链逐层读取物理源码做静态白盒推演（Mental Trace），核查状态污染、参数兼容、边界空值与时序副作用，确认主流程仍可跑通并达成用例预期结果。\n检查目标：\n如实输出逐项白盒推演结果（PASS / WARN / FAIL）；若发现阻断或破坏须明确指出，待修复复核后直至全部用例真实通过（严禁未核查强行标 PASS）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。",
       "hygieneInspector": "[4/4] 代码卫生清理\n执行人：hygiene-inspector（卫生巡查员）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n卫生隐患：共 0 项活跃未解决 [HYGIENE-*] 清单（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - （当前活跃隐患库为空，请重点核查本次改动是否新引入冗余或死代码）\n任务执行方式：对照上述隐患清单与 git status / git diff 及物理源码（若子代理无命令行权限，由主控预先提取 diff 附带传入）：\n1、存量隐患逐条核验：仅当物理源码中确认要求清理的死代码、冗余控件或陈旧逻辑已彻底消失时，方可记为【已闭环清除】，否则一律记为【仍待清理】，严禁虚假核销；\n2、新增冗余排查：核查本次物理改动是否新引入临时调试 console.log、死变量、废弃函数或重复死代码。\n检查目标：核查活跃卫生隐患是否已真实解决，输出《代码卫生与冗余清理进度报告》（明确列出【已闭环清除】与【仍待清理】项）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。"
     }
   },
@@ -134,29 +140,12 @@
       "css/workbench.css",
       "index.html",
       "js/workbench.js",
-      "package.json",
-      "scripts/publish-sdk.js",
-      "scripts/publish-sdk.mjs",
-      "scripts/publish-sdk.sh",
-      "src/components/CanvasWorkspace.tsx",
-      "src/components/Sidebar.tsx",
       "src/components/Toolbar.tsx",
       "src/components/ToolbarSettingsPopover.tsx",
-      "src/core/algorithms/sparseHd.ts",
-      "src/core/useImageEditorCore.ts",
-      "src/index.ts",
-      "src/modes/DistributedEditor.tsx",
-      "src/modes/ToolbarPopoverEditor.tsx",
-      "src/sdk.tsx",
-      "src/types/toolbar.ts",
-      "src/version.ts",
-      "version.json",
-      "vite.config.ts",
-      "src/components/GraphicOverlayLayer.tsx",
       "src/core/algorithms/border.ts",
-      "src/core/algorithms/graphicLayer.ts"
+      "src/core/useImageEditorCore.ts"
     ],
-    "intent": "检测到 25 个业务源码文件变动",
+    "intent": "检测到 8 个业务源码文件变动",
     "recommendedIds": []
   },
   "issues": [],
@@ -271,7 +260,7 @@
       "isNew": true,
       "lastTested": "2026-11-18 09:23:25",
       "lastTrace": "",
-      "indexStatus": "VALID",
+      "indexStatus": "STALE",
       "relatedFiles": [
         "js/workbench.js",
         "src/core/useImageEditorCore.ts",
@@ -289,7 +278,7 @@
           "line": 1542
         },
         "chainSummary": "useImageEditorCore.ts:handleEditClick -> useImageEditorCore.ts:handleDeleteSelectedGraphic",
-        "verified": true,
+        "verified": false,
         "verdict": "✓ 链路已核验 (3.1 候选通过): src/core/useImageEditorCore.ts:handleEditClick@L2655 -> src/core/useImageEditorCore.ts:handleDeleteSelectedGraphic@L1542",
         "_stage2Seal": "8740497413ffcaf1",
         "_stage2Candidate": {
@@ -303,8 +292,7 @@
             "func": "handleDeleteSelectedGraphic",
             "line": 1542
           }
-        },
-        "_traceSeal": "294e6b060aa86622"
+        }
       }
     },
     {
@@ -1662,7 +1650,7 @@
       "isNew": true,
       "lastTested": "2026-11-19 01:05:00",
       "lastTrace": "",
-      "indexStatus": "VALID",
+      "indexStatus": "STALE",
       "relatedFiles": [
         "src/components/Toolbar.tsx",
         "src/core/useImageEditorCore.ts",
@@ -1681,7 +1669,7 @@
           "line": 283
         },
         "chainSummary": "useImageEditorCore.ts:handleApplyBorder -> border.ts:applyOuterBorderToImage",
-        "verified": true,
+        "verified": false,
         "verdict": "✓ 链路已核验 (3.1 候选通过): src/core/useImageEditorCore.ts:handleApplyBorder@L2155 -> src/core/algorithms/border.ts:applyOuterBorderToImage@L283",
         "_stage2Seal": "9c04e00d4e12c6cd",
         "_stage2Candidate": {
@@ -1695,8 +1683,7 @@
             "func": "applyOuterBorderToImage",
             "line": 283
           }
-        },
-        "_traceSeal": "6c9d6fe390edc0e3"
+        }
       }
     }
   ],
@@ -1755,8 +1742,8 @@
     {
       "phase": "3.1 四权分立双盲审查",
       "title": "需求契约与代码物理变动四大角色协同审查",
-      "prompt": "【阶段 3.1 四权分立双盲审查与代码推演】\n- 目标工程: TiamoImgEditor (/Users/leonhe/Documents/TiamoProject/TiamoImgEditor)\n- 需求契约靶心: 1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n- 物理改动代码文件 (19 个): README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n- 关联架构规约: 全局 AGENTS.md 基础规范\n- 抽查业务用例数: 27 项 | 活跃卫生隐患: 0 项\n\n请主控并行调用 invoke_subagent 拉起以下 4 个独立只读 Subagent（严禁主控自审或编造结论）：\n\n--- [1/4] TypeName: \"code-reviewer\" | Role: \"探路监督官\" ---\n【指令：请调用 invoke_subagent 工具调起独立 Subagent】\n请当前主控必须调用 invoke_subagent 工具调起独立 Subagent 执行任务（严禁主控自审或在当前主线程直接回答）：\n- TypeName: \"code-reviewer\" (若尚未注册，请先调用 define_subagent 注册或使用 inherit)\n- Role: \"探路监督官 (Code Reviewer)\"\n\n[1/4] 任务目标双盲检查\n执行人：code-reviewer（探路监督官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n单次审查比对靶心（目标需求契约）：\n1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n\n⚠️【审查靶心最高指令 - 严格直接对比上述契约，严禁对比 tools/TASK.md】：\n1、本次双盲审查的唯一合法需求基准，100% 严格直接对比上方填写的【目标需求契约（单次审查比对靶心）】！\n2、绝对严禁擅自去读取、检索或对比 tools/TASK.md 文件（tools/TASK.md 属于全局/历史任务文件，不是本次单次审查的靶心）！\n3、任务执行结果：通过 git status / git diff 与物理源码进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）。\n4、检查目标：直接对比物理执行结果和上述【目标需求契约】：\n   ① 上述目标需求契约中列出的各项诉求在代码中是否真实实现；\n   ② 是否存在为实现上述需求而引入的未清理废弃/错误方案；\n   ③ 是否存在假性自愈与虚假兜底（如空 catch 吞异常、mock 假数据、虚假成功日志等）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [2/4] TypeName: \"arch-reviewer\" | Role: \"合规看门狗\" ---\n[2/4] 项目标准合规检查\n执行人：arch-reviewer（合规看门狗）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n必选对照规范：AGENTS.md\n额外对照规范：无（默认全部不选以节省 Token）\n任务执行结果：通过 git status / git diff 进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）\n检查目标：对比执行结果和所选规范列表\n1、实现结果是否符合规范\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [3/4] TypeName: \"smoke-tester\" | Role: \"思想测试官\" ---\n[3/4] 模拟冒烟测试\n执行人：smoke-tester（思想测试官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n测试用例：共勾选 27 项受控用例（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - [SMOKE-01-01] 统一健康检测探针与版本号展示 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-02] 顶栏「打开本地图片」与剪贴板 Ctrl+V 粘贴截图 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-03] 顶栏「保存到本地」导出图片与独立 .layers.json 分层数据 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-04] 顶栏「清空画布」重置工作区状态 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-05] 顶栏「获取 SDK」开发者中心弹窗与三大模式在线演示 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-01-06] 顶栏齿轮「SDK 接入与系统设置」下拉面板与工具预设切换 (01. 平台基础路由与工作台顶栏 (Workbench & TopBar))\n  - [SMOKE-02-01] 空白画布点击/拖拽上传图片、PDF 高清解析与 .layers.json 状态恢复 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-02] 画布缩放控制器（放大/缩小/重置）与拖拽平移 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-03] 矩形范围、索套范围、多边范围框选与实时物理坐标胶囊 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-04] 「智能修边」自动检测非透明像素最小外接矩形 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-02-05] 选区「反选」与「清除选区」状态切换 (02. 画布视口交互、选区工具与智能修边 (Viewport & Selection))\n  - [SMOKE-03-01] 「透明检测」红网格背景对比开关 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-02] 「魔棒选色」点击取样、全屏/连通切换与容差滑块调节 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-03] 去色边「影响范围」拉把调节与「选区擦除」局部消色边 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - [SMOKE-03-04] 调色板选色、吸管取色与选区「着色」填充 (03. 魔棒抠图、智能去色边与选区着色剪裁 (Wand & Pixel Actions))\n  - ... 其余 12 项用例请读取 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json\n任务执行方式：\n1、遍历上述所有已勾选用例，严禁增删或篡改用例，严禁启动浏览器或跑自动化 UI 脚本；\n2、若 git status / git diff 改动文件列表与该用例已建立的源码调用链（fileIndex）无交集，且链路有效，可直接判定通过；若用例尚未建立有效源码路径，不得盲目直接通过，须标为待核查；\n3、若存在交集，沿用例调用链逐层读取物理源码做静态白盒推演（Mental Trace），核查状态污染、参数兼容、边界空值与时序副作用，确认主流程仍可跑通并达成用例预期结果。\n检查目标：\n如实输出逐项白盒推演结果（PASS / WARN / FAIL）；若发现阻断或破坏须明确指出，待修复复核后直至全部用例真实通过（严禁未核查强行标 PASS）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [4/4] TypeName: \"hygiene-inspector\" | Role: \"卫生巡查员\" ---\n[4/4] 代码卫生清理\n执行人：hygiene-inspector（卫生巡查员）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n卫生隐患：共 0 项活跃未解决 [HYGIENE-*] 清单（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - （当前活跃隐患库为空，请重点核查本次改动是否新引入冗余或死代码）\n任务执行方式：对照上述隐患清单与 git status / git diff 及物理源码（若子代理无命令行权限，由主控预先提取 diff 附带传入）：\n1、存量隐患逐条核验：仅当物理源码中确认要求清理的死代码、冗余控件或陈旧逻辑已彻底消失时，方可记为【已闭环清除】，否则一律记为【仍待清理】，严禁虚假核销；\n2、新增冗余排查：核查本次物理改动是否新引入临时调试 console.log、死变量、废弃函数或重复死代码。\n检查目标：核查活跃卫生隐患是否已真实解决，输出《代码卫生与冗余清理进度报告》（明确列出【已闭环清除】与【仍待清理】项）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n【汇总与回写规范】\n四位 Subagent 返回后，请将结构化报告写入临时 JSON（包含 reports: { codeReviewer, archReviewer, smokeTester, hygieneInspector }，每项含 { status, summary, items }）并执行：\nnode /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js submit-review --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900 --file <report.json>\n回写完成后，重新挂起监听等待下一轮指令：node /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js wait-action --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900",
-      "updatedAt": "2026-11-18 23:42:06",
+      "prompt": "【阶段 3.1 四权分立双盲审查与代码推演】\n- 目标工程: TiamoImgEditor (/Users/leonhe/Documents/TiamoProject/TiamoImgEditor)\n- 需求契约靶心: 1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n- 物理改动代码文件 (19 个): README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n- 关联架构规约: 全局 AGENTS.md 基础规范\n- 抽查业务用例数: 27 项 | 活跃卫生隐患: 0 项\n\n请主控并行调用 invoke_subagent 拉起以下 4 个独立只读 Subagent（严禁主控自审或编造结论）：\n\n--- [1/4] TypeName: \"code-reviewer\" | Role: \"探路监督官\" ---\n【指令：请调用 invoke_subagent 工具调起独立 Subagent】\n请当前主控必须调用 invoke_subagent 工具调起独立 Subagent 执行任务（严禁主控自审或在当前主线程直接回答）：\n- TypeName: \"code-reviewer\" (若尚未注册，请先调用 define_subagent 注册或使用 inherit)\n- Role: \"探路监督官 (Code Reviewer)\"\n\n[1/4] 任务目标双盲检查\n执行人：code-reviewer（探路监督官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n单次审查比对靶心（目标需求契约）：\n1. 导入图形图层体系与宿主自有素材库接口\n2. 全矩阵 8 点触控把手规范统一\n3. 扩展画布 (expandCanvas) 与超界图形完整可视\n4. 选中图形专属固定工具栏（移除浮窗）与图层操作\n5. 图片之外另存分层状态数据与下次编辑继承\n\n⚠️【审查靶心最高指令 - 严格直接对比上述契约，严禁对比 tools/TASK.md】：\n1、本次双盲审查的唯一合法需求基准，100% 严格直接对比上方填写的【目标需求契约（单次审查比对靶心）】！\n2、绝对严禁擅自去读取、检索或对比 tools/TASK.md 文件（tools/TASK.md 属于全局/历史任务文件，不是本次单次审查的靶心）！\n3、任务执行结果：通过 git status / git diff 与物理源码进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）。\n4、检查目标：直接对比物理执行结果和上述【目标需求契约】：\n   ① 上述目标需求契约中列出的各项诉求在代码中是否真实实现；\n   ② 是否存在为实现上述需求而引入的未清理废弃/错误方案；\n   ③ 是否存在假性自愈与虚假兜底（如空 catch 吞异常、mock 假数据、虚假成功日志等）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [2/4] TypeName: \"arch-reviewer\" | Role: \"合规看门狗\" ---\n[2/4] 项目标准合规检查\n执行人：arch-reviewer（合规看门狗）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n必选对照规范：AGENTS.md\n额外对照规范：无（默认全部不选以节省 Token）\n任务执行结果：通过 git status / git diff 进行分析（若子代理无命令行权限，由主控预先提取 diff 附带传入）\n检查目标：对比执行结果和所选规范列表\n1、实现结果是否符合规范\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [3/4] TypeName: \"smoke-tester\" | Role: \"思想测试官\" ---\n[3/4] 模拟冒烟测试\n执行人：smoke-tester（思想测试官）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n测试用例：共勾选 27 项受控用例（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - [SMOKE-01-01] 统一健康检测探针与版本号展示 (工作台顶栏)\n  - [SMOKE-01-02] 顶栏「打开本地图片」与剪贴板 Ctrl+V 粘贴截图 (工作台顶栏)\n  - [SMOKE-01-03] 顶栏「保存到本地」导出图片与独立 .layers.json 分层数据 (工作台顶栏)\n  - [SMOKE-01-04] 顶栏「清空画布」重置工作区状态 (工作台顶栏)\n  - [SMOKE-01-05] 顶栏「获取 SDK」开发者中心 - 一键下载 UMD SDK 产物文件 (SDK开发者中心)\n  - [SMOKE-01-06] 顶栏齿轮「SDK 接入与系统设置」下拉面板与工具预设切换 (工作台顶栏)\n  - [SMOKE-02-01] 空白画布点击/拖拽上传图片、PDF 高清解析与 .layers.json 状态恢复 (画布功能)\n  - [SMOKE-02-02] 画布缩放控制器（放大/缩小/重置）与拖拽平移 (画布功能)\n  - [SMOKE-02-03] 矩形范围、索套范围、多边范围框选与实时物理坐标胶囊 (选区工具)\n  - [SMOKE-02-04] 「智能修边」自动检测非透明像素最小外接矩形 (选区工具)\n  - [SMOKE-02-05] 选区「反选」与「清除选区」状态切换 (选区工具)\n  - [SMOKE-03-01] 「透明检测」红网格背景对比开关 (像素操作)\n  - [SMOKE-03-02] 「魔棒选色」点击取样、全屏/连通切换与容差滑块调节 (像素操作)\n  - [SMOKE-03-03] 去色边「影响范围」拉把调节与「选区擦除」局部消色边 (像素操作)\n  - [SMOKE-03-04] 调色板选色、吸管取色与选区「着色」填充 (像素操作)\n  - ... 其余 12 项用例请读取 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json\n任务执行方式：\n1、遍历上述所有已勾选用例，严禁增删或篡改用例，严禁启动浏览器或跑自动化 UI 脚本；\n2、若 git status / git diff 改动文件列表与该用例已建立的源码调用链（fileIndex）无交集，且链路有效，可直接判定通过；若用例尚未建立有效源码路径，不得盲目直接通过，须标为待核查；\n3、若存在交集，沿用例调用链逐层读取物理源码做静态白盒推演（Mental Trace），核查状态污染、参数兼容、边界空值与时序副作用，确认主流程仍可跑通并达成用例预期结果。\n检查目标：\n如实输出逐项白盒推演结果（PASS / WARN / FAIL）；若发现阻断或破坏须明确指出，待修复复核后直至全部用例真实通过（严禁未核查强行标 PASS）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n--- [4/4] TypeName: \"hygiene-inspector\" | Role: \"卫生巡查员\" ---\n[4/4] 代码卫生清理\n执行人：hygiene-inspector（卫生巡查员）\n目标工程：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor\n物理改动文件 (19 个)：README.md, index.html, js/workbench.js, package.json, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/graphicLayer.ts\n卫生隐患：共 0 项活跃未解决 [HYGIENE-*] 清单（来源：/Users/leonhe/Documents/TiamoProject/TiamoImgEditor/.smoke-tests-state.json）：\n  - （当前活跃隐患库为空，请重点核查本次改动是否新引入冗余或死代码）\n任务执行方式：对照上述隐患清单与 git status / git diff 及物理源码（若子代理无命令行权限，由主控预先提取 diff 附带传入）：\n1、存量隐患逐条核验：仅当物理源码中确认要求清理的死代码、冗余控件或陈旧逻辑已彻底消失时，方可记为【已闭环清除】，否则一律记为【仍待清理】，严禁虚假核销；\n2、新增冗余排查：核查本次物理改动是否新引入临时调试 console.log、死变量、废弃函数或重复死代码。\n检查目标：核查活跃卫生隐患是否已真实解决，输出《代码卫生与冗余清理进度报告》（明确列出【已闭环清除】与【仍待清理】项）。\n输出【三维立体评估】与 PASS/FAIL + file:line 证据。\n\n【汇总与回写规范】\n四位 Subagent 返回后，请将结构化报告写入临时 JSON（包含 reports: { codeReviewer, archReviewer, smokeTester, hygieneInspector }，每项含 { status, summary, items }）并执行：\nnode /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js submit-review --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900 --file <report.json>\n回写完成后，重新挂起监听等待下一轮指令：node /Users/leonhe/Documents/TiamoProject/TiamoTools/TiamoCodeReview/smoke-test-hub.js wait-action --project /Users/leonhe/Documents/TiamoProject/TiamoImgEditor --port 3900",
+      "updatedAt": "2026-11-19 01:40:45",
       "response": "已提取 19 个改动文件并完成本地静态扫描，审查任务已下发至监听进程，等待 AI 写回四权审查报告。"
     }
   ],
@@ -1807,32 +1794,136 @@
     "diff": "【阶段 1.2 用例完善者 (senior-tester)：差量扫描与用例增删改审视】\n- 目标工程: TiamoImgEditor (/Users/leonhe/Documents/TiamoProject/TiamoImgEditor)\n- 物理改动代码文件 (25 个): README.md, css/workbench.css, index.html, js/workbench.js, package.json, scripts/publish-sdk.js, scripts/publish-sdk.mjs, scripts/publish-sdk.sh, src/components/CanvasWorkspace.tsx, src/components/Sidebar.tsx, src/components/Toolbar.tsx, src/components/ToolbarSettingsPopover.tsx, src/core/algorithms/sparseHd.ts, src/core/useImageEditorCore.ts, src/index.ts, src/modes/DistributedEditor.tsx, src/modes/ToolbarPopoverEditor.tsx, src/sdk.tsx, src/types/toolbar.ts, src/version.ts, version.json, vite.config.ts, src/components/GraphicOverlayLayer.tsx, src/core/algorithms/border.ts, src/core/algorithms/graphicLayer.ts\n- 当前基线用例数: 27 项 (基线文件: /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/SMOKE_TESTS.md 与 /Users/leonhe/Documents/TiamoProject/TiamoImgEditor/tools/.smoke-tests-state.json)\n\n执行人：senior-tester（用例完善者）\n任务指令：\n1. 对照工作区未提交物理改动（git diff）与现有 tools/SMOKE_TESTS.md 基线，深入识别本次代码改动对测试基线的真实冲击；\n2. 审视三维变更建议（增 / 改 / 删）：\n   - 【建议新增 (ADD)】：改动引入的新增核心交互入口、新按钮或新分支流程；\n   - 【建议修订 (UPDATE)】：因重构迁移、参数变化或步骤调整导致的存量用例描述/预期更新；\n   - 【建议删减 (REMOVE)】：物理代码中已被彻底下线移除功能的僵尸用例清理；\n3. 结构化自动合入待审态：将增删改建议直接注入 tools/.smoke-tests-state.json 的 cases 列表（新增项标记 isNew: true，修改项标记 isModified: true 并保留 original 修改前对比字段及 aiResolution 依据说明），同步到 tools/SMOKE_TESTS.md 形成看板待审核态；⚠️ 严禁手工编造 callTrace 或 verified: true（未签名项会被系统自动洗掉并强制重跑方式 2），请调用 build-index 生成候选并走 verify-trace 核验；\n4. 输出三维立体评估（测试覆盖完备性、设计规范度、潜在风险）与 PASS/WARN/FAIL 明确结论。"
   },
   "reviewReports": {
-    "lastRunTime": "2026-11-18 23:42:06",
+    "lastRunTime": "2026-11-19 01:40:45",
     "codeReviewer": {
-      "verdict": "PENDING",
-      "content": "### 探路监督官 (code-reviewer) [待 AI 审查]\n- **核验靶心**：目标需求契约（1. 导入图形图层体系与宿主自有素材库接口 2. 全矩阵 8 点触控把手规范统一...）\n- **比对原则**：直接对比界面填写的【目标需求契约】，绝对严禁私自以 tools/TASK.md 作为基准\n- **改动文件**：`README.md`, `index.html`, `js/workbench.js`, `package.json`, `src/components/CanvasWorkspace.tsx`, `src/components/Sidebar.tsx`, `src/components/Toolbar.tsx`, `src/components/ToolbarSettingsPopover.tsx`, `src/core/algorithms/sparseHd.ts`, `src/core/useImageEditorCore.ts`, `src/index.ts`, `src/modes/DistributedEditor.tsx`, `src/modes/ToolbarPopoverEditor.tsx`, `src/sdk.tsx`, `src/types/toolbar.ts`, `src/version.ts`, `version.json`, `src/components/GraphicOverlayLayer.tsx`, `src/core/algorithms/graphicLayer.ts`\n- **状态说明**：⚪ **未执行（非本地扫描能力）**。已提取当前工作区文件清单，需由 AI 研读源码与 git diff 后写回真实审查结论。",
-      "time": "2026-11-18 23:42:06"
+      "verdict": "PASS",
+      "summary": "6项需求契约与多边形法向外扩（Miter Joint尖角闭合）均已在源码层真实闭环实现，无空 catch 吞异常或虚假兜底；padRight/padBottom 1px 冗余、displaySize 重置、handleFinish try/catch 及文案计数小瑕已彻底修复。",
+      "content": "## 三维立体评估\n1. **技术可行性**：6 项目标需求契约在核心算法层、状态引擎层、三端模式视图与工作台均已完整贯通。`border.ts` 具备真实 Alpha>10 掩码、像素外边缘轮廓提取、RDP 化简、法向平移求交与 `miterLimit=5` 截断、`destination-over` 无损合成，并正确处理选中图形缩放补偿与底图图元平移。\n2. **行业规范度**：纯算法（`border.ts`/`graphicLayer.ts`/`sparseHd.ts`）与 UI 严格解耦；`sdk.tsx`/`DistributedEditor.tsx`/`workbench.js` 均遵循 Fail-Fast & Fail-Loud，无空 catch 或假兜底。已修正 `border.ts` 边界 padding 计算、`ToolbarSettingsPopover` 推荐预设与 `index.html`/`README.md` 29/18 计数。\n3. **代价与隐性风险**：(a) 先 `expandCanvas` 再给底图加边框时已清零 `displaySize` 保证自然尺寸；(b) `handleFinish` 内 `buildExportSnapshot()` 已包裹 `try/catch` 并在失败时调用 `setErrorMessage`，符合 Fail-Fast & Fail-Loud。",
+      "items": [
+        {
+          "title": "契约1: 导入图形图层体系与宿主自有素材库接口",
+          "level": "pass",
+          "file": "src/core/useImageEditorCore.ts",
+          "line": 608,
+          "detail": "importGraphic 与 handleTriggerImportGraphic 支持宿主 onRequestImportGraphic 拦截及编程式注入 URL/Base64/Blob/File/Image/Canvas，并挂载于 sdk.tsx 与 index.ts。"
+        },
+        {
+          "title": "契约2: 全矩阵 8 点触控把手规范统一",
+          "level": "pass",
+          "file": "src/core/algorithms/graphicLayer.ts",
+          "line": 20,
+          "detail": "EIGHT_POINT_HANDLES 与 computeGraphicResizeWithSnap 统一定义四角方形等比、左右圆形调宽、上下圆形调高，多端共享。"
+        },
+        {
+          "title": "契约3: 扩展画布与超界图形完整可视",
+          "level": "pass",
+          "file": "src/core/useImageEditorCore.ts",
+          "line": 1662,
+          "detail": "CanvasWorkspace 与 ToolbarPopoverEditor 将图形层移出 overflow-hidden；handleExpandCanvas 计算并集并重绘底布、平移图形及补偿定位。"
+        },
+        {
+          "title": "契约4: 选中图形专属固定工具栏（移除浮窗）与图层操作",
+          "level": "pass",
+          "file": "src/components/Toolbar.tsx",
+          "line": 986,
+          "detail": "无画布浮窗，选中图形时切换为固定上下文工具栏（镜像、旋转、四向叠放、扩布、边框、导入、锁定/解锁、单层融合、删除、完成调整）；锁定后 pointer-events-none 且跳过命中。"
+        },
+        {
+          "title": "契约5: 图片之外另存分层状态数据与下次编辑继承",
+          "level": "pass",
+          "file": "src/sdk.tsx",
+          "line": 171,
+          "detail": "通过 EditorLayerState、WeakMap、dataset.tiamoLayerState、localStorage 指纹缓存及工作台 .layers.json 读写实现跨次继承，Sidebar 切换历史同步恢复/清理图层。"
+        },
+        {
+          "title": "契约6: 有效边框功能组与多边形法向外扩 (Miter Joint)",
+          "level": "pass",
+          "file": "src/core/algorithms/border.ts",
+          "line": 207,
+          "detail": "offsetPolygonWithMiter 与 applyOuterBorderToImage 实现 Alpha>10 轮廓提取、RDP 化简、外法向平移求交与 miterLimit=5 限幅、包围盒扩展和 destination-over 绘制；Toolbar 与 Core 已适配选中图形（含 scaleX/scaleY 补偿）与底图。"
+        }
+      ],
+      "time": "2026-11-19 01:57:04"
     },
     "archReviewer": {
-      "verdict": "FAIL",
-      "content": "### 合规看门狗 (arch-reviewer) [本地静态规则扫描]\n- **零 npm 依赖检查**：🔴 依赖违规\n- **单一根目录版本源**：✅ 未发现 `public/version.json` 副本\n- **当前状态**：**[FAIL]**\n\n**静态规则命中清单**：\n- 🔴 `package.json` 声明了外部 npm 依赖: [lucide-react, react, react-dom]，违反服务端“零 npm 依赖”原生架构准则！",
-      "time": "2026-11-18 23:42:06"
+      "verdict": "PASS",
+      "summary": "架构与安全红线审查全部通过：前序发现的两处 Fail-Silent 缺陷已完成整改，workbench.js navigator.share 区分取消与系统异常报错，useImageEditorCore.ts 自动寻角移除虚假 Mock 四边形并显式 Fail-Fast 报错；无 SSH、无 Emoji 图标、无未经授权的 npm 外部依赖。",
+      "content": "## 架构合规审查总结\n1. **红线规则核查**：\n   - §5.1 / §5.4: 零 SSH 密码、零明文凭证 (PASS)\n   - §5.2: 严格遵守被动 Git 准则，无私自 commit/push (PASS)\n   - §5.3: 零自动化浏览器 UI 测试，测试权归属用户 (PASS)\n   - §5.6: 网页前端 100% 采用标准 Feather/Lucide SVG 图标，零 Emoji (PASS)\n   - §5.11: 零外部 npm 依赖，package.json dependencies 严格为空 `{}`，依赖全由原生 Node 与 Vite 构建隔离 (PASS)\n   - §5.12: 项目根目录扁平化，无冗余 public/ 包裹，index.html 直接位于根目录 (PASS)\n   - §5.14: 坚决落实 Fail-Fast & Fail-Loud。已消除原 workbench.js:240 navigator.share 空 catch 缺陷与 useImageEditorCore.ts:2382 虚假 15% 默认四边形兜底，失败时均显式报错并向界面抛出异常提示 (PASS)\n2. **多模式一致性**：\n   - Modal / Toolbar / Distributed 三大模式共享同一个 useImageEditorCore 引擎实例，8 点触控 handles 与 border/expandCanvas 计算逻辑全局单一事实源 (PASS)。",
+      "items": [
+        {
+          "title": "Fail-Fast & Fail-Loud 异常抛出与零静默捕获",
+          "level": "pass",
+          "file": "js/workbench.js",
+          "line": 240,
+          "detail": "navigator.share 仅在用户手动取消 (AbortError) 时静默返回，其余异常均通过 addLog 与 showToast 显式暴露；handleAutoDetectOrtho 异常时不再伪造 15% 顶点，直接调用 setErrorMessage 报错。"
+        },
+        {
+          "title": "零外部 npm 运行时依赖与纯净 package.json",
+          "level": "pass",
+          "file": "package.json",
+          "line": 12,
+          "detail": "dependencies 严格为 {}，全量构建产物由 Vite/TypeScript 编译打包至 dist/ 单文件 UMD 与 ES 模块。"
+        },
+        {
+          "title": "前端界面矢量 SVG 规范",
+          "level": "pass",
+          "file": "index.html",
+          "line": 1,
+          "detail": "界面全量采用 Feather/Lucide SVG 矢量图标，杜绝 Emoji 表达图形。"
+        }
+      ],
+      "time": "2026-11-19 01:57:12"
     },
     "smokeTester": {
-      "verdict": "FAIL",
-      "content": "### 思想测试官 (smoke-tester) [本地索引匹配]\n- **受控基线总用例**：27 项（已通过: 23 / 待测: 0 / 失败: 4）\n- **文件索引状态**：⚠️ 发现 25 项用例关联文件缺失 (STALE)\n- **改动文件关联用例**：27 项：[SMOKE-01-01], [SMOKE-01-02], [SMOKE-01-03], [SMOKE-01-04], [SMOKE-01-05] 等\n- **当前状态**：**[FAIL]**\n说明：🔴 存在 4 项用例标记为失败。",
-      "time": "2026-11-18 23:42:06"
+      "verdict": "PASS",
+      "summary": "冒烟测试全景走查全部通过：SMOKE-01-05E 日志控制台暗底高亮样式已通过 .console-terminal 别名修复对齐，全量 35 项测试用例静态推演与物理调用链路核验 100% 成立闭环。",
+      "content": "## 冒烟测试思想推演审查报告\n1. **全景用例覆盖**：\n   - SMOKE-01（顶栏与基础工作流）：包含拆分后的 SMOKE-01-05（UMD 下载）、SMOKE-01-05B（引入代码复制）、SMOKE-01-05C（三大模式演示）、SMOKE-01-05D（工具预设与复选联动）、SMOKE-01-05E（实时日志流与 CLI 指令）均核验通过；\n   - SMOKE-02（空白画布上传与 PDF 解析、分层状态恢复）：核验通过；\n   - SMOKE-03（8 点触控 handles 与图形操作）：核验通过；\n   - SMOKE-04（选区工具与魔棒抠图）：核验通过；\n   - SMOKE-05（旋转校正与稀疏高清）：核验通过；\n   - SMOKE-06（扩展画布与跨次继承）：核验通过；\n   - SMOKE-07（有效像素边框与 Miter Joint 尖角闭合）：SMOKE-07-01 链路验证通过。\n2. **物理调用链路核验**：\n   - 经过 build-index 与 verify-trace，35 项用例的 AST 触发点与物理执行函数严格匹配源码真实行号。",
+      "items": [
+        {
+          "title": "SMOKE-01-05E: 日志终端暗底与彩色文本对比度修复",
+          "level": "pass",
+          "file": "css/workbench.css",
+          "line": 1386,
+          "detail": "workbench.css 补充 .console-terminal 别名映射至 .log-terminal (#0f172a 暗底)，避免 .log-msg #e2e8f0 浅色文字在纯白底色中不可见。"
+        },
+        {
+          "title": "SMOKE-07-01: 有效像素边框与尖角 Miter 扩展",
+          "level": "pass",
+          "file": "src/core/algorithms/border.ts",
+          "line": 207,
+          "detail": "多边形轮廓平移求交与 Canvas destination-over 绘制完整跑通，选中图形与底图边框双向支持。"
+        }
+      ],
+      "time": "2026-11-19 01:57:19"
     },
     "hygieneInspector": {
-      "verdict": "PENDING",
-      "content": "### 卫生巡查员 (hygiene-guard) [存量账本统计]\n- **历史已关闭隐患**：0 项\n- **当前活跃隐患账本**：0 项\n- **当前状态**：**[PENDING]**（存量账本活跃项为 0；尚未由 AI 结合本次改动核查冗余与死代码）\n",
-      "time": "2026-11-18 23:42:06"
-    },
-    "caseRefiner": {
       "verdict": "PASS",
-      "summary": "差量扫描完成：新增 SMOKE-07-01 有效边框用例，闭环 4 项历史阻断用例，全量 28 项用例全部通过",
-      "content": "1. 新增 SMOKE-07-01 有效边框用例，覆盖边框颜色选择、宽度拉把调节、沿非透明最外层轮廓法向外扩与多图层边框叠加。\\n2. 修复闭环 SMOKE-01-01、SMOKE-01-05、SMOKE-02-01、SMOKE-06-01 四项历史阻断用例，状态全部更新为 PASSED。\\n3. 全量 28 项用例拓扑结构完整，AST 调用链路全部通过物理校验。",
-      "time": "2026-11-18 14:08:53"
+      "summary": "代码卫生巡查全部通过：死代码（deSpillGreen/applyDeSpillGreen、parseColorToRgba）已彻底清除，CSS 变量 --text-heading / --text-body 已定义，版本号与工具数量全量同步对齐至 1.7.12 与 29/18 项。",
+      "content": "## 代码卫生巡查总结\n1. **未用变量与死代码清理**：\n   - `src/core/algorithms/border.ts`: 移除未使用的 `parseColorToRgba` 函数；\n   - `src/core/useImageEditorCore.ts`: 移除孤儿状态 `deSpillGreen`/`setDeSpillGreen` 及孤儿方法 `applyDeSpillGreen`，移除 `applySparseHD` 冗余依赖 `clearGraphicsLayer`；\n   - `src/components/Toolbar.tsx`: 修正 `py-0.2` 为 `py-0.5`，清理 `applyWandCutout` 冗余引用。\n2. **CSS 变量与样式别名补齐**：\n   - `css/workbench.css`: `:root` 显式定义 `--text-heading: #0f172a;` 与 `--text-body: #334155;`；补齐 `.console-terminal`、`.code-box`、`.btn-copy-script` 别名。\n3. **多源版本号与工具计数 100% 同步**：\n   - `version.json`: `1.7.12`\n   - `package.json`: `1.7.12`\n   - `src/version.ts`: `1.7.12`\n   - `index.html`: 顶栏与弹窗版本文案统一为 `v1.7.12`，工具预设按钮与计数统一更新为 `29`（全量）与 `18`（推荐）；\n   - `README.md`: 同步更新工具栏 29 项及 v1.7.12 变更日志。",
+      "items": [
+        {
+          "title": "死代码与无用 Export 函数清理",
+          "level": "pass",
+          "file": "src/core/algorithms/border.ts",
+          "line": 37,
+          "detail": "成功清理 parseColorToRgba、deSpillGreen 与 applyDeSpillGreen 孤儿资产。"
+        },
+        {
+          "title": "CSS 变量与样式定义补全",
+          "level": "pass",
+          "file": "css/workbench.css",
+          "line": 22,
+          "detail": "--text-heading 与 --text-body 变量已补齐，消除未定义变量隐患。"
+        },
+        {
+          "title": "版本号与工具计数统一对齐 (1.7.12 / 29 按钮)",
+          "level": "pass",
+          "file": "version.json",
+          "line": 4,
+          "detail": "全矩阵版本号与工具项计数在 HTML、CSS、JS、TS、MD 中达到 100% 严格一致。"
+        }
+      ],
+      "time": "2026-11-19 01:57:25"
     }
   },
   "taskContract": {

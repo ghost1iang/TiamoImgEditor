@@ -102,7 +102,7 @@ export const ToolbarSettingsPopover: React.FC<ToolbarSettingsPopoverProps> = ({
   const applyRecommended = () => {
     onSetTools([
       'rect', 'cropAuto', 'wand', 'tolerance', 'spillRadius', 'erase', 
-      'colorPicker', 'pipette', 'crop', 'importGraphic', 'expandCanvas', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
+      'colorPicker', 'pipette', 'crop', 'importGraphic', 'expandCanvas', 'border', 'rotateCw', 'rotateAny', 'ortho', 'orthoAuto', 'deShadow',
       'settings'
     ]);
   };

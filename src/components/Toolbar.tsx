@@ -1135,7 +1135,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     }`}
                     title="调节边框宽度 (PX)"
                   >
-                    <span className={`px-1 py-0.2 rounded text-[10px] font-mono ${
+                    <span className={`px-1 py-0.5 rounded text-[10px] font-mono ${
                       showBorderWidthPopover
                         ? 'bg-indigo-700 text-white'
                         : isCompact
@@ -1484,7 +1484,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
                 {visibleTools.has('erase') && (
                   <button 
-                    onClick={handleEraseSelection || applyWandCutout} 
+                    onClick={handleEraseSelection} 
                     disabled={!hasSelection || isLoading} 
                     className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
                       hasSelection && !isLoading
@@ -1596,7 +1596,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   }`}
                   title="调节边框宽度 (PX)"
                 >
-                  <span className={`px-1 py-0.2 rounded text-[10px] font-mono ${
+                  <span className={`px-1 py-0.5 rounded text-[10px] font-mono ${
                     showBorderWidthPopover
                       ? 'bg-indigo-700 text-white'
                       : isCompact

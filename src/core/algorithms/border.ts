@@ -32,53 +32,6 @@ export interface Point {
 }
 
 /**
- * 解析颜色字符串为 RGBA 四通道数值 (0~255)
- */
-export function parseColorToRgba(colorStr: string): [number, number, number, number] {
-  if (!colorStr) return [255, 255, 255, 255];
-  const s = colorStr.trim().toLowerCase();
-
-  // 1. 十六进制颜色 (#fff, #ffffff, #ffffffff)
-  if (s.startsWith('#')) {
-    let hex = s.slice(1);
-    if (hex.length === 3 || hex.length === 4) {
-      hex = hex.split('').map((c) => c + c).join('');
-    }
-    const num = parseInt(hex, 16);
-    if (isNaN(num)) return [255, 255, 255, 255];
-    if (hex.length === 8) {
-      return [
-        (num >>> 24) & 255,
-        (num >>> 16) & 255,
-        (num >>> 8) & 255,
-        num & 255,
-      ];
-    }
-    return [
-      (num >> 16) & 255,
-      (num >> 8) & 255,
-      num & 255,
-      255,
-    ];
-  }
-
-  // 2. rgb / rgba 格式
-  const rgbaMatch = s.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-  if (rgbaMatch) {
-    const r = Math.min(255, Math.max(0, parseInt(rgbaMatch[1], 10) || 0));
-    const g = Math.min(255, Math.max(0, parseInt(rgbaMatch[2], 10) || 0));
-    const b = Math.min(255, Math.max(0, parseInt(rgbaMatch[3], 10) || 0));
-    const a = rgbaMatch[4] !== undefined
-      ? Math.min(255, Math.max(0, Math.round(parseFloat(rgbaMatch[4]) * 255)))
-      : 255;
-    return [r, g, b, a];
-  }
-
-  // 兜底白色
-  return [255, 255, 255, 255];
-}
-
-/**
  * 计算多边形有向面积（Shoelace 公式）：顺时针为正，逆时针为负
  */
 export function computeSignedArea(pts: Point[]): number {
@@ -374,9 +327,9 @@ export async function applyOuterBorderToImage(
 
   // 4. 计算为完整容纳 Miter 尖角所需的画布扩展边距 (padding)
   const padLeft = Math.max(0, Math.ceil(-boundMinX));
-  const padRight = Math.max(0, Math.ceil(boundMaxX - (srcW - 1)));
+  const padRight = Math.max(0, Math.ceil(boundMaxX - srcW));
   const padTop = Math.max(0, Math.ceil(-boundMinY));
-  const padBottom = Math.max(0, Math.ceil(boundMaxY - (srcH - 1)));
+  const padBottom = Math.max(0, Math.ceil(boundMaxY - srcH));
 
   const newW = srcW + padLeft + padRight;
   const newH = srcH + padTop + padBottom;

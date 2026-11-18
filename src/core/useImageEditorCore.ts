@@ -152,7 +152,6 @@ export function useImageEditorCore(options: CoreOptions = {}) {
   const [borderWidth, setBorderWidth] = useState<number>(4);
   const borderWidthRef = useRef<number>(4);
   borderWidthRef.current = borderWidth;
-  const [deSpillGreen, setDeSpillGreen] = useState<boolean>(true); // 智能去色边开关
   const [spillRadius, setSpillRadius] = useState<number>(3); // 智能去色边影响范围 (默认 3 像素边缘邻域)
   const spillRadiusRef = useRef<number>(3);
   spillRadiusRef.current = spillRadius;
@@ -2011,7 +2010,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
         setIsHdProcessing(false);
       }
     }, 40);
-  }, [resolveEffectiveSource, clearGraphicsLayer, commitBaseEditResult, setMaskCanvas, setQuadPoints, setIsPolyClosed, setSelectionRegion]);
+  }, [resolveEffectiveSource, commitBaseEditResult, setMaskCanvas, setQuadPoints, setIsPolyClosed, setSelectionRegion]);
 
   const handleResetOrthoPoints = () => {
     if (!imageRef.current) return;
@@ -2245,6 +2244,7 @@ export function useImageEditorCore(options: CoreOptions = {}) {
         }
       }
 
+      setDisplaySize(null);
       commitBaseEditResult(res.dataUrl, `添加有效像素边框 (${borderWidthRef.current}px)`);
     } catch (err: any) {
       console.error('[handleApplyBorder base]', err);
@@ -2373,27 +2373,12 @@ export function useImageEditorCore(options: CoreOptions = {}) {
       const resolved = await resolveEffectiveSource();
       const targetSource = resolved ? resolved.source : imageRef.current;
       if (!targetSource) return;
-      const { points, isAutoDetected } = detectOrthoQuadCorners(targetSource);
+      const { points } = detectOrthoQuadCorners(targetSource);
       setOrthoPoints(points);
       setActiveTool('ortho');
-      if (!isAutoDetected) {
-        console.log('[TiamoImageEditor] 未检测到显著四边形边缘，已应用默认推荐四角顶点');
-      }
-    } catch (err) {
-      console.warn('[TiamoImageEditor] 自动寻角异常，应用默认推荐顶点:', err);
-      if (imageRef.current) {
-        const nw = imageRef.current.naturalWidth;
-        const nh = imageRef.current.naturalHeight;
-        const mx = Math.round(nw * 0.15);
-        const my = Math.round(nh * 0.15);
-        setOrthoPoints([
-          { x: mx, y: my },
-          { x: nw - mx, y: my },
-          { x: nw - mx, y: nh - my },
-          { x: mx, y: nh - my },
-        ]);
-        setActiveTool('ortho');
-      }
+    } catch (err: any) {
+      console.error('[TiamoImageEditor] 自动寻角异常:', err);
+      setErrorMessage('智能寻角失败: ' + String(err?.message || err));
     }
   };
 
@@ -2428,48 +2413,6 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     for (let i = 0; i < data.length; i += 4) { if (data[i + 3] > 0) data[i + 3] = 0; else { data[i]=255; data[i+1]=255; data[i+2]=0; data[i+3]=180; } }
     const newCanvas = document.createElement('canvas'); newCanvas.width = activeMask.width; newCanvas.height = activeMask.height;
     newCanvas.getContext('2d')?.putImageData(imageData, 0, 0); setMaskCanvas(newCanvas);
-  };
-
-  // 执行单独去色边滤镜
-  const applyDeSpillGreen = async () => {
-    if (!currentImageRef.current) return;
-    setIsLoading(true);
-    try {
-      const resolved = await resolveEffectiveSource();
-      if (!resolved) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = resolved.nw;
-      canvas.height = resolved.nh;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(resolved.source, 0, 0);
-
-      const imgDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgDataObj.data;
-      const activeMask = maskCanvasRef.current;
-      const modified = activeMask
-        ? processLocalDeSpill(
-            data,
-            canvas.width,
-            canvas.height,
-            activeMask.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data || new Uint8ClampedArray(canvas.width * canvas.height * 4),
-            sampledColorRef.current,
-            toleranceRef.current,
-            spillRadiusRef.current
-          )
-        : processUniversalDeSpill(data, sampledColorRef.current, toleranceRef.current);
-
-      if (modified) {
-        ctx.putImageData(imgDataObj, 0, 0);
-        const res = canvas.toDataURL('image/png');
-        const curSampled = sampledColorRef.current;
-        const colorDesc = curSampled ? `rgb(${curSampled.r},${curSampled.g},${curSampled.b})` : "背景色";
-        commitBaseEditResult(res, `智能去色边 (${colorDesc})`);
-      }
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   /**
@@ -2711,19 +2654,24 @@ export function useImageEditorCore(options: CoreOptions = {}) {
       if (onCancelRef.current) onCancelRef.current();
       return;
     }
-    const { canvas, base64, state } = await buildExportSnapshot();
+    try {
+      const { canvas, base64, state } = await buildExportSnapshot();
 
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        const msg = '导出图像转换为 Blob 失败';
-        console.error('[TiamoImageEditor handleFinish]', msg);
-        setErrorMessage(msg);
-        return;
-      }
-      if (onCompleteRef.current) {
-        onCompleteRef.current({ blob, base64, canvas, state });
-      }
-    }, 'image/png');
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          const msg = '导出图像转换为 Blob 失败';
+          console.error('[TiamoImageEditor handleFinish]', msg);
+          setErrorMessage(msg);
+          return;
+        }
+        if (onCompleteRef.current) {
+          onCompleteRef.current({ blob, base64, canvas, state });
+        }
+      }, 'image/png');
+    } catch (err: any) {
+      console.error('[TiamoImageEditor handleFinish]', err);
+      setErrorMessage(`完成导出失败: ${err?.message || err}`);
+    }
   };
 
   const handleCancel = () => {
@@ -2768,11 +2716,8 @@ export function useImageEditorCore(options: CoreOptions = {}) {
     maskCanvas,
     tolerance,
     setTolerance,
-    deSpillGreen,
-    setDeSpillGreen,
     spillRadius,
     setSpillRadius,
-    applyDeSpillGreen,
     sampledColor,
     setSampledColor,
     fillColor,
