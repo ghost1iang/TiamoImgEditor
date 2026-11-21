@@ -56,6 +56,10 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
   const {
     currentImage,
     activeTool,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
@@ -174,10 +178,12 @@ export const ToolbarPopoverEditor: React.FC<ToolbarPopoverEditorProps> = (props)
             left: `${stageRect.left}px`,
             width: `${stageRect.width}px`,
             height: `${stageRect.height}px`,
+            touchAction: 'none',
           }}
-          onMouseDown={handleMouseDown} 
-          onMouseMove={handleMouseMove} 
-          onMouseUp={handleMouseUp}
+          onPointerDown={handlePointerDown || handleMouseDown} 
+          onPointerMove={handlePointerMove || handleMouseMove} 
+          onPointerUp={handlePointerUp || handleMouseUp}
+          onPointerCancel={handlePointerCancel || handleMouseUp}
           onDoubleClick={handleDoubleClick}
           onContextMenu={(e) => e.preventDefault()}
         >

@@ -23,6 +23,10 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     isPanning,
     spacePressed,
     activeTool,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
@@ -111,14 +115,16 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   return (
     <div 
       ref={workspaceRef}
-      className={`flex-1 flex flex-col p-2 overflow-hidden relative no-scrollbar select-none ${isPanning || spacePressed ? 'cursor-grabbing' : (activeTool === 'rect' || activeTool === 'lasso' || activeTool === 'pipette' || activeTool === 'quad' || activeTool === 'ortho' ? 'cursor-crosshair' : (activeTool === 'wand' ? 'cursor-cell' : 'cursor-grab'))} ${className}`} 
-      onMouseDown={handleMouseDown} 
-      onMouseMove={handleMouseMove} 
-      onMouseUp={handleMouseUp} 
-      onMouseLeave={() => {
+      className={`flex-1 flex flex-col p-2 overflow-hidden relative no-scrollbar select-none touch-none ${isPanning || spacePressed ? 'cursor-grabbing' : (activeTool === 'rect' || activeTool === 'lasso' || activeTool === 'pipette' || activeTool === 'quad' || activeTool === 'ortho' ? 'cursor-crosshair' : (activeTool === 'wand' ? 'cursor-cell' : 'cursor-grab'))} ${className}`} 
+      style={{ touchAction: 'none' }}
+      onPointerDown={handlePointerDown || handleMouseDown} 
+      onPointerMove={handlePointerMove || handleMouseMove} 
+      onPointerUp={handlePointerUp || handleMouseUp} 
+      onPointerCancel={handlePointerCancel || handleMouseUp}
+      onPointerLeave={() => {
         // 拖拽/框选/高清放大/正交化/导入图形过程中由 window 全局监听接管，移出工作区绝不中断拖拽；仅非拖拽时才安全重置
         if (!core.regionStart && !isPanning && draggingPointIdx === -1 && draggingOrthoIdx === -1 && drawingPath.length === 0 && !core.rectDragPoints && !hdDragHandle && !graphicDragState) {
-          handleMouseUp();
+          (handlePointerUp || handleMouseUp)();
         }
       }}
       onDoubleClick={handleDoubleClick}
@@ -312,21 +318,39 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 )}
               </span>
 
-              {/* 原图 / 高清 实时按住对比 */}
+              {/* 原图 / 高清 实时按住对比 (统一 Pointer 驱动，杜绝 touch/mouse 混用冲突与延迟) */}
               {hdOriginalImage && (
                 <button
                   type="button"
-                  onMouseDown={(e) => { e.stopPropagation(); setIsComparingOriginal(true); }}
-                  onMouseUp={(e) => { e.stopPropagation(); setIsComparingOriginal(false); }}
-                  onMouseLeave={() => setIsComparingOriginal(false)}
-                  onTouchStart={(e) => { e.stopPropagation(); setIsComparingOriginal(true); }}
-                  onTouchEnd={(e) => { e.stopPropagation(); setIsComparingOriginal(false); }}
-                  className={`ml-1 px-2 py-0.5 rounded text-[10px] font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer select-none ${
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    try { (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); } catch {}
+                    setIsComparingOriginal(true);
+                  }}
+                  onPointerUp={(e) => {
+                    e.stopPropagation();
+                    try {
+                      if ((e.currentTarget as HTMLElement).hasPointerCapture?.(e.pointerId)) {
+                        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                      }
+                    } catch {}
+                    setIsComparingOriginal(false);
+                  }}
+                  onPointerCancel={(e) => {
+                    e.stopPropagation();
+                    try {
+                      if ((e.currentTarget as HTMLElement).hasPointerCapture?.(e.pointerId)) {
+                        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                      }
+                    } catch {}
+                    setIsComparingOriginal(false);
+                  }}
+                  className={`ml-1 px-2 py-0.5 rounded text-[10px] font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer select-none touch-none ${
                     isComparingOriginal 
                       ? 'bg-indigo-600 text-white ring-2 ring-indigo-400' 
                       : 'bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700'
                   }`}
-                  title="按住鼠标查看原图，松开恢复高清图"
+                  title="按住查看原图，松开恢复高清图"
                 >
                   <Eye size={12} />
                   <span>{isComparingOriginal ? '当前显示: 原图' : '按住对比原图'}</span>

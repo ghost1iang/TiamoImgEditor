@@ -1,4 +1,4 @@
-import { Point } from '../useImageEditorCore';
+import { Point } from '../../types/canvas';
 
 /**
  * 计算正交化目标矩形的宽高

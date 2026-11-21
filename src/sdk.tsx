@@ -54,6 +54,21 @@ export class TiamoImageEditor {
   static version = SDK_VERSION;
   static buildTime = SDK_BUILD_TIME;
   static description = SDK_DESCRIPTION;
+  private static activeCleanups = new Set<() => void>();
+
+  /**
+   * 强制销毁当前所有挂载中的编辑器实例，彻底释放 DOM 与事件
+   */
+  static destroy(): void {
+    for (const cleanup of Array.from(this.activeCleanups)) {
+      try {
+        cleanup();
+      } catch (err) {
+        console.warn('[TiamoImageEditor SDK] destroy cleanup 异常:', err);
+      }
+    }
+    this.activeCleanups.clear();
+  }
 
   /**
    * 单行代码唤起图像编辑器，完成编辑后返回 Promise
@@ -158,6 +173,7 @@ export class TiamoImageEditor {
       const reactRoot = ReactDOM.createRoot(mountPoint);
 
       const cleanup = () => {
+        TiamoImageEditor.activeCleanups.delete(cleanup);
         try {
           reactRoot.unmount();
         } catch (e) {
@@ -167,6 +183,7 @@ export class TiamoImageEditor {
           hostContainer.parentNode.removeChild(hostContainer);
         }
       };
+      TiamoImageEditor.activeCleanups.add(cleanup);
 
       const handleDone = (result: EditResult) => {
         cleanup();

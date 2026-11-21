@@ -2,7 +2,7 @@
  * 智能魔棒选区与色彩漫水/全色相去溢色纯算法模块
  */
 
-import { Point, SelectionRegion } from '../useImageEditorCore';
+import { Point, SelectionRegion } from '../../types/canvas';
 
 export interface SampledColor {
   r: number;

@@ -23,7 +23,7 @@ export const ModalEditor: React.FC<ModalEditorProps> = (props) => {
 
   return (
     <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm animate-in fade-in select-none">
-      <div className="w-full h-full max-w-[100vw] max-h-[100vh] bg-[#f8fafc] text-slate-800 font-sans flex overflow-hidden shadow-2xl relative">
+      <div className="w-full h-full max-w-[100vw] max-h-[100dvh] max-h-[var(--app-height,100%)] bg-[#f8fafc] text-slate-800 font-sans flex overflow-hidden shadow-2xl relative">
         {/* 左侧历史边栏 */}
         <Sidebar core={core} />
 

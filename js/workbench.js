@@ -35,8 +35,10 @@
       if (!res) return;
       const link = document.createElement('a');
       link.download = filename;
+      let objUrl = null;
       if (res instanceof Blob) {
-        link.href = URL.createObjectURL(res);
+        objUrl = URL.createObjectURL(res);
+        link.href = objUrl;
       } else if (typeof res === 'string') {
         link.href = res;
       } else if (res instanceof HTMLCanvasElement) {
@@ -45,6 +47,9 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      if (objUrl) {
+        setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+      }
     }
 
     // 导出并下载独立分层状态 JSON 文件（图片之外另存一份图层数据，便于下次继承恢复）

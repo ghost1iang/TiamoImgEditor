@@ -11,6 +11,7 @@ export const importGraphic = TiamoImageEditor.importGraphic.bind(TiamoImageEdito
 export const expandCanvas = TiamoImageEditor.expandCanvas.bind(TiamoImageEditor);
 export const getLayerState = TiamoImageEditor.getLayerState.bind(TiamoImageEditor);
 export const loadLayerState = TiamoImageEditor.loadLayerState.bind(TiamoImageEditor);
+export const destroy = TiamoImageEditor.destroy.bind(TiamoImageEditor);
 
 export { useImageEditorCore } from './core/useImageEditorCore';
 export type { ImageEditorCore, CoreOptions, HistoryRecord, Point, SelectionRegion, RectDragPoints } from './core/useImageEditorCore';
@@ -70,8 +71,19 @@ if (typeof window !== 'undefined') {
     globalObj.TiamoImageEditor.expandCanvas = expandCanvas;
     globalObj.TiamoImageEditor.getLayerState = getLayerState;
     globalObj.TiamoImageEditor.loadLayerState = loadLayerState;
+    globalObj.TiamoImageEditor.destroy = destroy;
     globalObj.TiamoImageEditor.version = SDK_VERSION;
     globalObj.TiamoImageEditor.buildTime = SDK_BUILD_TIME;
+
+    // 统一矩阵公共 SDK 运行时自注册 (TIAMO_SDKS_INSTRUCTION.md §1.8)
+    globalObj.__TIAMO_SDKS__ = globalObj.__TIAMO_SDKS__ || {};
+    globalObj.__TIAMO_SDKS__['TiamoImageEditor'] = {
+      name: '图片编辑器 (TiamoImageEditor)',
+      version: SDK_VERSION,
+      buildTime: SDK_BUILD_TIME,
+      fileName: 'tiamo-image-editor.umd.js',
+      loadedAt: new Date().toLocaleTimeString('zh-CN'),
+    };
 
     if (isSourceBuild) {
       globalObj.__SDK_LOADED_FROM_SOURCE__ = true;

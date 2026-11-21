@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tiamo 家族工程规范自检报告 — TiamoImgEditor</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-sec: #475569;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-soft: #eef2ff;
+      --emerald: #10b981;
+      --emerald-soft: #ecfdf5;
+      --amber: #f59e0b;
+      --amber-soft: #fffbeb;
+      --rose: #ef4444;
+      --rose-soft: #fef2f2;
+      --card-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+      padding: 24px 16px 48px;
+    }
+    .mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .container { max-width: 1440px; margin: 0 auto; }
+
+    /* 顶部导航头 */
+    .top-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 14px; }
+    .brand-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+      flex-shrink: 0;
+    }
+    .brand-title { font-size: 1.25rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .head-badge {
+      font-size: 0.76rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+      background: #f1f5f9; color: var(--text-sec); border: 1px solid var(--border);
+    }
+    .brand-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
+
+    .action-group { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+      .btn-primary:hover { background: #4338ca; }
+      .btn-archive:hover { background: #047857; border-color: #047857; }
+    }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-archive { background: #059669; color: #fff; border-color: #059669; }
+    .btn-archive:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* 指标网格 */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1024px) {
+      .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--card-shadow);
+    }
+    .metric-lbl { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+    .metric-val { font-size: 1.15rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* 结论看板 */
+    .conclusion-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--card-shadow);
+    }
+    .conclusion-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+    .conclusion-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+    .stat-pills { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .stat-pill {
+      font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .stat-passed { background: var(--emerald-soft); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .stat-fixed { background: var(--primary-soft); color: var(--primary); border: 1px solid rgba(79, 70, 229, 0.25); }
+    .stat-skipped { background: #f1f5f9; color: var(--text-sec); border: 1px solid var(--border); }
+
+    .progress-track {
+      width: 100%; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, #10b981, #4f46e5); border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    /* 表格卡片 */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+    }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    thead th {
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.85rem;
+      vertical-align: top;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      tbody tr:hover { background: #fafafa; }
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .col-id { width: 50px; text-align: center; }
+    .col-name { min-width: 240px; }
+    .col-score { width: 80px; text-align: center; white-space: nowrap; }
+    .col-status { width: 110px; white-space: nowrap; }
+    .col-time { width: 170px; white-space: nowrap; }
+    .col-summary { min-width: 320px; }
+
+    .id-badge {
+      display: inline-block; padding: 2px 7px; border-radius: 6px;
+      background: #f1f5f9; color: var(--text-sec); font-size: 0.78rem; font-weight: 700;
+      font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", monospace;
+    }
+    .item-name { font-weight: 700; color: var(--text); font-size: 0.92rem; }
+    .item-doc { font-size: 0.76rem; color: var(--text-muted); margin-top: 3px; }
+
+    .score-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 0.76rem; font-weight: 700; font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .score-high { background: var(--rose-soft); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25); }
+    .score-med { background: var(--amber-soft); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .score-low { background: #eff6ff; color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); }
+    .score-zero { background: #f1f5f9; color: #94a3b8; }
+    .score-none { background: #f8fafc; color: #cbd5e1; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 999px; font-size: 0.76rem; font-weight: 700;
+    }
+    .st-passed { background: var(--emerald-soft); color: #059669; }
+    .st-fixed { background: var(--primary-soft); color: var(--primary); }
+    .st-skipped { background: #f1f5f9; color: var(--text-muted); }
+    .st-running { background: #eff6ff; color: #2563eb; }
+    .st-awaiting { background: var(--amber-soft); color: #d97706; }
+    .st-failed { background: var(--rose-soft); color: #dc2626; }
+    .qa-rounds { display: flex; flex-direction: column; gap: 8px; }
+    .qa-round-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.8rem; line-height: 1.5; }
+
+    .time-stamp {
+      font-size: 0.76rem; color: var(--text-sec);
+      font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", monospace;
+    }
+    .summary-text {
+      color: var(--text-sec); line-height: 1.6; word-break: break-word; font-size: 0.84rem;
+    }
+
+    .prompt-box {
+      margin-top: 8px; border: 1px solid var(--border); border-radius: 8px;
+      background: #f8fafc; font-size: 0.78rem; overflow: hidden;
+    }
+    .prompt-box summary {
+      padding: 5px 10px; cursor: pointer; color: var(--text-muted); font-weight: 600;
+      display: flex; align-items: center; gap: 5px; user-select: none;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .prompt-box summary:hover { color: var(--text); }
+    }
+    .prompt-content {
+      padding: 8px 12px; border-top: 1px solid var(--border); background: #ffffff;
+      color: #334155; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 0.75rem; max-height: 200px; overflow-y: auto; line-height: 1.5;
+    }
+
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .footer {
+      text-align: center; margin-top: 32px; font-size: 0.76rem; color: var(--text-muted);
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .action-group, .prompt-box summary { display: none !important; }
+      .top-bar, .metric-card, .conclusion-card, .table-card { box-shadow: none !important; border: 1px solid #ccc; }
+      .prompt-box { display: block; }
+      .prompt-content { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="top-bar">
+      <div class="brand-wrap">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">
+            <span>TiamoImgEditor 自检合规报告</span>
+            <span class="head-badge mono">HEAD: 7daeb2e</span>
+            <span class="head-badge mono">main</span>
+          </h1>
+          <p class="brand-sub">依据 TiamoSelfCheck 规范自检清单自动检验与审计留档</p>
+        </div>
+      </div>
+      <div class="action-group">
+        <button class="btn btn-archive" id="archiveReportBtn" onclick="archiveStandaloneReport()" title="将当前自检结果归档为 tools/self-check-report-archive.md">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="21 8 21 21 3 21 3 8"/>
+            <rect x="1" y="3" width="22" height="5"/>
+            <line x1="10" y1="12" x2="14" y2="12"/>
+          </svg>
+          <span id="archiveReportBtnText">归档</span>
+        </button>
+        <button class="btn" onclick="window.print()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          <span>打印 / 导出 PDF</span>
+        </button>
+        <button class="btn btn-primary" onclick="if (window.opener || window.history.length > 1) { window.close(); history.back(); } else { showReportToast('您可直接关闭当前标签页'); }">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          <span>关闭报告</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-lbl">所属项目</div>
+        <div class="metric-val mono">TiamoImgEditor</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-lbl">基准提交 (HEAD)</div>
+        <div class="metric-val mono">7daeb2e</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-lbl">整体自检日期</div>
+        <div class="metric-val mono">2026-11-21</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-lbl">自检起止时间</div>
+        <div class="metric-val mono" style="font-size: 0.95rem;">22:39:34 ~ 22:43:21</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-lbl">整体持续时间</div>
+        <div class="metric-val mono" style="color: var(--primary);">3分47秒 (227s)</div>
+      </div>
+    </div>
+
+    <div class="conclusion-card">
+      <div class="conclusion-header">
+        <div class="conclusion-title">已完成 9 / 9 勾选项（已通过 9 项 · 已修复 0 项 · 本次跳过 6 项）</div>
+        <div class="stat-pills">
+          <span class="stat-pill stat-passed">已通过 9 项</span>
+          <span class="stat-pill stat-fixed">已修复 0 项</span>
+          <span class="stat-pill stat-skipped">本次跳过 6 项</span>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: 100%;"></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-id">序号</th>
+              <th class="col-name">自检规范与项目名称</th>
+              <th class="col-score">必要性</th>
+              <th class="col-status">执行状态</th>
+              <th class="col-time">自检时间</th>
+              <th class="col-summary">评估依据与自检修复内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td class="col-id"><span class="id-badge">01</span></td>
+        <td class="col-name">
+          <div class="item-name">主项目技术框架选型</div>
+          <div class="item-doc">`Documents/TIAMO_STRUCTURE_SPEC.md` (`STRUCT-01` (零外部 npm 依赖)、`STRUCT-02` (目录扁平化)、`STRUCT-03` (目录语义纯粹化))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">读取项目 `package.json`、目录树与服务端入口（如 `server.js`、`server/`）。核查：1) 若包含 Node.js 服务端，`package.json` 的 `&quot;dependencies&quot;` 是否严格为空对象 `{}`，后端代码中是否 100% 仅使用 `http`、`https`、`fs`、`path`、`crypto`、`os`、`url` 等 Node 原生内置模块（严禁存在 `express`、`axios`、`cors`、`dotenv`、`cookie-parser`、`jsonwebtoken`、`body-parser` 等第三方运行时依赖）；2) 目录结构是否严格扁平化——`index.html` 必须直接位于项目根目录，严禁用一层 `public/` 包裹整个前端页面（仅 Vite 项目允许保留 `public/` 存放 `favicon.svg` 等非编译直出资产）；3) 目录语义是否纯粹——后端拆分模块必须放在 `server/` 下（严禁占用 `src/`），`src/` 仅允许用于 Vite 等前端编译源码。若发现违规依赖或目录越界，立即重构为纯原生模块实现并归正目录语义。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-zero">0/10</span></td>
+        <td class="col-status"><span class="status-badge st-skipped"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>本次跳过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-19 02:20:12 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="summary-text">Vite 前端与 SDK 架构，无后端 Node 运行时与外部 npm 服务依赖，根目录扁平 index.html，src 语义纯粹</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">02</span></td>
+        <td class="col-name">
+          <div class="item-name">跨设备适配方案</div>
+          <div class="item-doc">`Documents/TIAMO_CROSS_DEVICE_SPEC.md` (`DEV-01`~`DEV-04` (四维正交模型)、`DEV-05`~`DEV-08` (触控与手势零抖动)、`DEV-09`~`DEV-13` (三级宽度与视口软键盘防御))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">全面扫描前端 HTML、CSS 与交互/手势 JS 代码，严格对照四维正交模型逐项核查：1) 严禁使用 `navigator.userAgent` 硬判手机/iPad；所有 `:hover` 浮起与高亮样式必须置于 `@media (hover: hover) and (pointer: fine)` 媒体查询内，严禁在触屏端用“悬停半透明蒙层”隐藏操作入口（防 iOS 双击陷阱与触屏无法唤出）；2) 画布/拖拽交互必须采用 Pointer Events 单一事件流（`pointerdown/move/up/cancel` + `setPointerCapture` + `touch-action: none`），严禁 `mousedown` 与 `touchstart` 双绑引发三重事件风暴；触控热区须满足 `&gt;= 44x44px` 且对画布控制手柄实施 `1 / zoom` 逆缩放补偿；3) 若含双指捏合缩放（Pinch-to-Zoom），核查缩放容器严禁残留 `transition-transform / duration-*` 缓动类、严禁对 `zoom` 做 `0.01` 阶梯取整、几何锚点补偿公式必须计入初始 `startPan` 偏移、高频 `touchmove` 须走 `rAF` 轻量 `transform` 通道并将重度排版延迟至 `touchend`，且捏合期间必须锁定 `isPinching` 阻断单指拖拽与 `visualViewport` 的 `fitToScreen` 重置，并拦截 Safari `gesturestart/change/end`；4) 全屏页面与弹窗严禁裸用 `100vh`，须基于 `--app-height`（稳底盘）与 `--visual-height`（避让软键盘）解耦测量，嵌套 Flex 容器逐层补齐 `min-h-0`，所有输入框在窄屏下字号须 `&gt;= 16px` 防 iOS 自动放大视口，横向多标签栏须支持无滚动条滑动与桌面鼠标抓手拖拽。发现不合规处逐一按正例范式修复。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-high">10/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:42:01 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · frontend-expert · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">全量接入Pointer Events与setPointerCapture，长按对比纯Pointer驱动且touch-none，清零touch/mouse混用</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">03</span></td>
+        <td class="col-name">
+          <div class="item-name">数据持久化方案</div>
+          <div class="item-doc">`Documents/TIAMO_SECURITY_SPEC.md`、`Documents/TIAMO_REPO_SPEC.md` (`SEC-01` (数据目录集中收拢)、`SEC-02` (零数据自愈与脱敏模板)、`REPO-05` (.deployignore 生产排除))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">检查所有运行时动态读写路径、Git 追踪列表、`.gitignore`、`.deployignore` 及服务端初始化逻辑：1) 所有业务 JSON 数据库、SQLite 文件、用户上传资产与生成物是否 100% 收拢在根目录 `data/` 或 `uploads/` 标准目录下（严禁散落在源码目录或写往容器重启即丢的 `/tmp`）；2) 执行 `git ls-files data/ uploads/` 检查是否误将线上/本地真实运行时业务数据纳入 Git 追踪（仅允许追踪脱敏的 `*.example.json` 初始化样本模板，发现真实数据被追踪须执行 `git rm --cached` 移出版本库并保留本地物理文件）；3) 项目根目录是否具备规范的 `.deployignore`（忽略 `data/`、`uploads/`、`.env*`、`self-check-report.md`、日志等）；4) 服务端启动代码是否严格采用“初始化克隆模式（Example Cloner Pattern）”——仅在目标数据文件不存在（`!fs.existsSync`）时从 `.example` 模板克隆初始化，严禁启动时无条件覆写已有业务数据。发现隐患立即整改。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-low">3/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:42:20 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · security-auditor · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">版本库无真实运行时数据，.gitignore与.deployignore严格排除data/与uploads/及过程档案</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">04</span></td>
+        <td class="col-name">
+          <div class="item-name">图标管理方案</div>
+          <div class="item-doc">`Documents/TIAMO_UI_SPEC.md`、`Documents/TIAMO_GATEWAY_SPEC.md` (`UI-03` (清零网页 Emoji 矢量化)、`UI-04` (中央图标 API 录入规范)、`GW-06` (跨子域统一图标代理)、`UI-05` (动态读取 app.image 严禁去伪健壮性))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">全局扫描所有 `.html`、前端 `.js/.ts/.vue/.jsx` 与 `.css` 文件：1) **清零网页 Emoji 与规范跨子域网关路径**：排查前端是否存在任何 Unicode Emoji 充当图标/徽章/空状态/按钮装饰（终端日志与 CLI 脚本除外），且子应用引用中央图标时严禁写相对路径 `/api/icons/...`（独立子域无该代理会导致 404，仅总控 `TiamoLogin` 除外），必须统一拼接 `${TIAMO_GATEWAY}/api/icons/&lt;id&gt;.svg?style=transparent&amp;color=&lt;hex&gt;`；2) **缺失图标统一走中央 API 录入扩充**：替换 Emoji 或排查私有散装图标时，先请求 `GET https://tiamoland.i234.me/api/icons` 查询现有资产库；若中央库尚无合适图标，严禁在子项目本地私存零散 SVG/PNG 资产，必须调用中央录入接口 `POST https://tiamoland.i234.me/api/icons`（JSON 传入 `{ id, name, svgCode, bgColor, iconColor }`，推荐直接传 Feather/Lucide 内部 `&lt;path/...&gt;` 图形片段由网关自动包裹标准化容器）入库后再统一引用；3) **主图标强制动态消费 `app.image`**：除 HTML `&lt;head&gt;` 中唯一的 `&lt;link rel=&quot;icon&quot;&gt;` 静态特例之外，页面内渲染自身或兄弟应用 Brand Logo / 导航磁贴必须从 `window.__TIAMO_APPS__`（或 `__tiamo_cached_apps__`）动态读取 `app.imageUrl || app.image`；4) **严查“去伪健壮性”反模式**：严禁编写 `&#39;/api/icons/&#39; + app.id + &#39;.svg&#39;` 盲猜拼接，严禁在 `onerror` 或兜底分支偷换为 `login.svg` 等假图标，读取不到必须直接留空真实暴露。发现违规立即按规范清理、入库并重写。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-zero">0/10</span></td>
+        <td class="col-status"><span class="status-badge st-skipped"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>本次跳过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-19 02:23:54 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="summary-text">全站零 Emoji，UI 统一采用 Lucide 与原生纯矢量 SVG，主应用 Favicon 规范引用中央网关完整路径</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">05</span></td>
+        <td class="col-name">
+          <div class="item-name">UI统一方案</div>
+          <div class="item-doc">`Documents/TIAMO_UI_SPEC.md` (`UI-01` (Slate/Indigo 色彩设计令牌)、`UI-02` (Plus Jakarta Sans &amp; JetBrains Mono 字体栈)、`UI-06` (磨砂玻璃与原子组件)、`UI-07` (清零原生系统弹窗自绘 Modal))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">对照家族视觉规范审查全局样式表、Tailwind 配置与核心 UI 组件：1) 色彩体系是否对齐以清透浅灰白（`#f8fafc` / Slate 阶梯）为基底、Indigo（`#4f46e5` / `#6366f1`）为主品牌色的克制极简风格；2) 字体栈是否规范引入并声明 `&#39;Plus Jakarta Sans&#39;`（正文/UI）与 `&#39;JetBrains Mono&#39;`（版本号/代码/等宽数字）；3) 顶部导航栏、浮动胶囊工具栏（Pill Toolbar）、卡片圆角边框（`1px solid rgba(226,232,240,0.8)`）、磨砂玻璃层级（`backdrop-filter: blur(...)`）、细胶囊滚动条及模态弹窗遮罩动效是否符合原子组件标准；4) 按钮内图标与文字尺寸间距比例（`.btn-icon` `16x16px` + `flex-shrink: 0`）、纯图标按钮热区是否协调统一，清理前端残留的裸特殊字符图标或粗糙原生交互；5) **清零浏览器原生系统弹窗**：全文扫描是否存在 `window.alert(`、`alert(`、`window.confirm(`、`confirm(`、`window.prompt(`、`prompt(`，发现后一律替换为非阻塞 `Toast` 或 `Documents/TIAMO_UI_SPEC.md` UI-07 规定的极简自绘模态弹窗（`await window.tiamoConfirm` / `await window.tiamoAlert`）。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-med">4/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:42:06 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · frontend-expert · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">Slate/Indigo设计令牌完整对齐，声明预加载双字体，清零原生alert/confirm/prompt改走自绘Modal</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">06</span></td>
+        <td class="col-name">
+          <div class="item-name">巨型文件拆分方案</div>
+          <div class="item-doc">`Documents/TIAMO_CODE_QUALITY_SPEC.md` (`CODE-01` (大文件行数分级警戒线)、`CODE-02` (四层单向解耦模型 L1~L4))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">统计项目源码中所有 `.js/.ts/.vue/.jsx/.css/.html` 文件的物理行数（排除 `dist/`、第三方库、单文件跨站注入 SDK/Guard Bundle 与纯静态字典）：1) 识别是否存在超过预警线（`&gt; 600` 行）或严重巨石红线（`&gt; 1000` 行）且混杂了“纯算法配置 + 状态存储 + API 通信 + DOM 渲染/事件监听”多重职责的巨型文件；2) 检查拆分模块是否严格遵循 **L1 基础纯函数/常量层 → L2 领域状态与服务层 → L3 独立 UI 组件/子路由层 → L4 顶层编排壳层** 的单向无环依赖（严禁底层工具反向引用顶层实例或循环依赖）；3) 对命中巨石坏味道的文件，按标准五步落地工序（契约先行、状态就近、黑盒替换）实施无损解耦拆分，确保对外接口与交互行为 100% 等价。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-high">10/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:43:17 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · hygiene-inspector · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">拆分useImageEditorCore至907行、Toolbar至626行，消除L1/L2循环依赖，全库34个文件&lt;=1000行</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">07</span></td>
+        <td class="col-name">
+          <div class="item-name">TiamoBar接入方案</div>
+          <div class="item-doc">`Documents/TIAMO_GATEWAY_SPEC.md` (`GW-01` (Fail-Close 零信任盾牌)、`GW-02` (32px 微顶栏自适应空间)、`GW-03` (appId 短标识全局注册))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">检查所有前端 HTML 页面 `&lt;head&gt;` 注入脚本与顶层布局 CSS：1) `&lt;head&gt;` 最顶部是否正确接入 **TiamoGuard 物理防窥盾牌**（默认隐藏未鉴权文档流，Fail-Close 零信任机制，严禁未鉴权先裸露业务界面闪烁后再跳转）并正确加载 `tiamo-guard.js`；2) 子应用声明的 `appId` 是否与 `TiamoLogin` 控制台注册的短标识严格一致；3) 页面布局是否正确适配 **32px 浅色微顶栏（TiamoBar）** 的注入空间——严禁业务自身的 `fixed/sticky` 顶栏、侧边抽屉或全屏容器遮挡 TiamoBar，也严禁业务代码私自重复扣减两次 `32px` 导致底部留白或截断。发现漏接、闪烁或顶栏遮挡问题立即按标准模板修正。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-zero">0/10</span></td>
+        <td class="col-status"><span class="status-badge st-skipped"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>本次跳过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-19 02:25:20 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="summary-text">标准接入 Fail-Close 物理防窥盾牌、4s 看门狗与 tiamo-guard.js，data-app=&#39;image&#39; 严格对齐，32px 微顶栏自适应</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">08</span></td>
+        <td class="col-name">
+          <div class="item-name">AI统一管理及授权方案</div>
+          <div class="item-doc">`Documents/TIAMO_AI_CONFIG_SPEC.md` (`AI-01` (前端零密钥红线)、`AI-02` (后端方案 B 内存驻留)、`AI-03` (常量时间比对越权拦截)、`AI-04` (分级错误码与状态探针))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">（若本项目完全不涉及大模型/AI 配置或调用，本项评 0 分跳过）全面审计前后端 AI 配置与调用链路：1) **前端零密钥红线**：严禁在前端代码、LocalStorage 或浏览器网络请求中暴露明文大模型 API Key，管理端回显必须严格脱敏；2) **后端方案 B 与单项目隔离**：子应用后端必须统一通过 `X-App-Secret` 向中央网关 `/api/service/config/:appId` 拉取授权配置（网关侧须采用常量时间安全比对严格拦截跨项目越权），且子应用拉取的 API Key **仅驻留服务端进程内存**，严禁落盘或打印日志；3) **分级错误码与标准健康探针**：未配凭证、凭证失效（401/403）、未启用（503）或配置缺失（404/502）须返回精准分级状态码，并按规范提供脱敏的 `/api/system/ai-status` 健康自检探针接口。发现违规立即整改。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-low">2/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:42:25 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · security-auditor · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">前端零硬编码凭据，缺失Key时Fail-Fast报错拦截，接口异常主动抛错拒绝虚假Mock</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">09</span></td>
+        <td class="col-name">
+          <div class="item-name">群晖用户权限分级管理方案</div>
+          <div class="item-doc">`Documents/TIAMO_AUTH_SPEC.md` (`AUTH-01` (统一 SSO 会话)、`AUTH-02` (checkIsDSMAdmin 管理员算法)、`AUTH-03` (服务端独立鉴权拦截)、`AUTH-04` (记录级隔离与 Users API))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">全面核查前后端身份识别、角色分级与数据越权防护：1) **管理员判定标准**：前后端判定群晖 DSM 管理员是否严格统一对齐 `checkIsDSMAdmin` 标准算法（兼容 `isAdmin === true`、`role === &#39;admin&#39;`、`groups` 含 `administrators` 及 DSM 保留管理员规则）；2) **前后端双重硬拦截**：前端敏感管理入口须基于会话状态严格隔离并消除异步竞态；同时所有后端管理路由、写操作与私有数据 API **必须在服务端独立校验 SSO Cookie 会话、角色与 `allowedApps` 授权**（严禁信任前端传参或过宽的局域网 IP 免鉴权放行导致越权漏洞，并确保未登录重定向路径准确有效）；3) **数据记录级隔离与用户列表**：多用户业务数据须校验归属权，协作者列表统一对接 `/api/users`（或 `/api/auth/users`）。发现越权隐患立即加固。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-zero">0/10</span></td>
+        <td class="col-status"><span class="status-badge st-skipped"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>本次跳过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-19 02:26:12 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="summary-text">无私有后端管理接口与越权隐患，用户身份与应用权限统一委托中央 tiamo-guard 与 SSO 零信任网关</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">10</span></td>
+        <td class="col-name">
+          <div class="item-name">版本号管理及自增设计</div>
+          <div class="item-doc">`Documents/TIAMO_VERSION_SPEC.md` (`VER-01` (唯一根目录 version.json)、`VER-02` (四处版本 100% 同步)、`VER-03` (动态时间戳防缓存)、`VER-04` (四维两态版本探针)、`VER-05` (中央 Git Hook 与流水线自增))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">逐项核查项目版本事实源、进程活体版本接口与防缓存机制：1) **唯一根目录 `version.json`**：确认全仓库有且仅有根目录唯一一个 `version.json`，严禁在 `public/` 等子目录私存物理副本；2) **四处版本 100% 对齐**：核对根目录 `version.json` 的 `version`、`frontend.version`、`backend.version`（纯静态站除外）及 `package.json` 的 `version` 四处版本号完全一致；3) **四维两态探针接口**：核查后端 `/api/version` 与 `/api/auth/version` 必须同时返回**启动驻留内存版本 (memoryVersion)** 与 **磁盘实时版本 (diskVersion)**，并向前端注入内存版本，支持 TiamoBar 精准诊断前端旧缓存与后端未热重启；4) **中央双闸门与 `serveDynamicHtml`**：子项目严禁残留私有 `bump-version.js`，Git `core.hooksPath` 须挂载至 `TiamoLogin/scripts/git-hooks`，且原生服务端响应 HTML 须通过 `serveDynamicHtml` 动态注入 `version.json` 的 `mtimeMs` 防缓存参数与前端内存版本标记。发现问题立即修复。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-med">5/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:40:52 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · infra-architect · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">根目录单一version.json且三处版本1.7.15同步，vite.config配置mtime防缓存与Banner，无私有脚本或副本</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">11</span></td>
+        <td class="col-name">
+          <div class="item-name">SDK项目基础框架和技术选型</div>
+          <div class="item-doc">`Documents/TIAMO_SDK_SPEC.md` (`SDK-01` (单文件零依赖交付)、`SDK-02` (样式命名空间与沙箱隔离)、`SDK-03` (双模态 API 与完整 destroy 释放)、`SDK-04` (自注册至 window.__TIAMO_SDKS__))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">（仅当本项目本身是公共 SDK 组件库生产工程如 `TiamoImageEditor`、`TiamoFontEditor`、`TiamoAudioPlayer` 等时执行；普通业务子应用与网关总控本项直接评 0 分跳过）核查 SDK 工程架构合规性：1) 构建产物是否为内联全部 CSS/SVG 资产的零外部运行时依赖单文件 `.js` Bundle（UMD/IIFE + ESM 兼容）；2) 内部样式是否具备严格沙箱或专属前缀隔离，绝不污染宿主页面全局样式；3) 是否完整支持弹窗态与嵌入态双形态 API，且 `destroy()` 100% 释放全局事件监听、`ResizeObserver`、定时器、音频/Blob 句柄与 DOM 节点；4) 版本导出与中央归档注册表完全对齐，构建期静态注入 `MySDK.version` 并于运行时自注册至 `window.__TIAMO_SDKS__` 统一总线供 TiamoBar 探针感知。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-med">5/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:40:47 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · sdk-specialist · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">单文件零依赖打包，具备静态destroy彻底清理，支持Shadow DOM物理样式隔离与modal/toolbar/distributed三态</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">12</span></td>
+        <td class="col-name">
+          <div class="item-name">业务宿主接入消费公共SDK方案</div>
+          <div class="item-doc">`Documents/TIAMO_SDK_SPEC.md`、`Documents/TIAMO_CANVAS_SPEC.md` (`SDK-05` (严禁本地私拷 SDK 产物)、`SDK-06` (package.json tiamoSdks 声明与 /sdk/* 双态路由)、`SDK-07` (生命周期与 destroy 协同)、`CANVAS-05` (文字图元双向数据映射))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">（若本项目既不消费也不托管 `/sdk/*.js` 公共组件，本项评 0 分跳过）核查公共 SDK 消费与双态路由链路：1) **严禁私拷 SDK 产物**：检查项目源码目录（`js/`、`lib/`、`public/`、`vendor/` 等）是否违规物理拷贝了 `tiamo-*.js` 构建副本，发现一律清除；2) **依赖声明与双态直连路由**：消费端 `package.json` 须准确声明 `&quot;tiamoSdks&quot;` 数组，前端统一通过 `/sdk/&lt;fileName&gt;` 引用，本地开发态与网关服务端的 `/sdk` 路由映射须干净无重复且严格限制 `path.basename` 防目录穿越；3) **实例销毁与图元协同**：关闭/卸载时须调用 SDK `destroy()`，画布文字图元交互须严格遵守宿主与 SDK 边界契约。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-zero">0/10</span></td>
+        <td class="col-status"><span class="status-badge st-skipped"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>本次跳过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-19 02:28:36 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="summary-text">无违规私拷外部 SDK 物理副本，自身产物严格由 dist 输出，支持宿主标准生命周期与图层契约消费</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">13</span></td>
+        <td class="col-name">
+          <div class="item-name">跨端文件导出下载与系统分享方案</div>
+          <div class="item-doc">`Documents/TIAMO_CROSS_DEVICE_SPEC.md` (`DEV-14` (移动端文件导出策略：原生分享优先与 a download 拦截规避)、`DEV-15` (Blob URL 生命周期与内存释放))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">（若本项目完全无任何图片/PDF/脚本/快照 JSON/压缩包等文件导出下载功能，本项评 0 分跳过）全局排查所有文件导出、保存与下载代码：1) **根治移动端裸 `&lt;a download&gt;` 与 `window.open` 下载失灵**：检查是否存在裸调 `&lt;a download&gt;` 或 `window.open(&#39;...?download=true&#39;, &#39;_blank&#39;)` 导致在 iOS Safari / 移动端 WebView 中被弹窗拦截、覆盖当前工作台或无法存入系统文件的问题；2) **标准跨端分发与系统原生分享优先**：在触控移动环境下优先封装 `File` 对象检测并调用 `navigator.canShare / navigator.share({ files })` 唤起系统原生分享面板（对用户取消 `AbortError` 静默处理），桌面端或不支持环境平滑降级至带 `Content-Disposition: attachment` 或 `Blob` 下载，并确保延时调用 `URL.revokeObjectURL` 释放内存。发现问题立即统一封装改造。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-low">3/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:42:11 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · frontend-expert · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">exportResult支持图层合成导出，移动端优先唤起系统分享并静默AbortError，Blob下载延迟1s释放URL</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">14</span></td>
+        <td class="col-name">
+          <div class="item-name">工程基建软链接与统一部署红线</div>
+          <div class="item-doc">`Documents/TIAMO_REPO_SPEC.md`、`Documents/TIAMO_SECURITY_SPEC.md` (`REPO-01` (唯一 AGENTS.md 软链接)、`REPO-02` (废除 Documents 软链接)、`REPO-03` (统一部署流水线与清剿私有脚本)、`REPO-04` (项目边界隔离与禁止跨项目侵入))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">核查项目根目录工程基建与部署资产合规性：1) **唯一软链接与废除 Documents 软链接**：子项目根目录有且仅需保留唯一的规则软链接 `AGENTS.md -&gt; ../AGENTS.md`，严禁私存或维护 `Documents` 软链接（公共规范统一由顶层 `TiamoProject/Documents` 实体维护，子项目通过 `../Documents` 只读访问）；2) **清剿冗余/私建部署脚本**：除统一部署流水线（Tiamo Deployer 及群晖中央部署引擎 `tiamo-deploy`）外，严禁子项目私自编写或在本地/远端维护任何私有的部署脚本（如 `deploy.sh`、`deploy.command`、`deploy_remote.sh` 等），发现立即清除；3) **跨项目边界隔离**：全矩阵子项目纯属平行被调度业务工程，排查业务代码中是否存在越界硬编码读取其他平行子项目源码的违规耦合，并在中央发布排除项中确保 `self-check-report.md` 不随生产包上传，而 `self-check-report.html` 不得被排除（须随生产包上传以供服务器展示报告）。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-zero">0/10</span></td>
+        <td class="col-status"><span class="status-badge st-skipped"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>本次跳过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-19 02:29:35 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="summary-text">保持 AGENTS.md 唯一软链接、废除 Documents 软链接，无私有部署脚本，严格遵守统一部署与跨项目隔离边界</div>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="col-id"><span class="id-badge">15</span></td>
+        <td class="col-name">
+          <div class="item-name">安全红线、静态白名单托管与仓库卫生</div>
+          <div class="item-doc">`Documents/TIAMO_SECURITY_SPEC.md`、`Documents/TIAMO_CODE_QUALITY_SPEC.md`、`Documents/TIAMO_REPO_SPEC.md` (`SEC-03` (被动 SSH 与零明文密码)、`SEC-04` (零信任静态白名单映射托管)、`SEC-05` (XSS 与 CORS 白名单防御)、`CODE-03` (严禁虚假自愈与吞异常)、`REPO-06` (严格规避 .DS_Store 与版本库卫生))</div>
+          <details class="prompt-box"><summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>自检指导提示词 (点击展开)</summary><div class="prompt-content">执行全仓库安全、版本库卫生与错误暴露审查：1) **零明文密码与敏感凭证防泄露**：全文扫描代码、脚本、配置文件是否硬编码任何 SSH 密码、管理员密码或明文私钥；同时核查 SVG 图标注册等富文本输入点是否剥离 `&lt;script&gt;` 与 `on*=` 内联事件属性防止存储型 XSS，核查带 `credentials: true` 的 CORS 策略是否校验可信域名白名单（严禁对任意第三方恶意站点无条件反射 `Access-Control-Allow-Origin`）；2) **严禁假性自愈与虚假兜底（Fail Fast &amp; Fail Loud）**：排查是否存在“明明未连接真实 AI 却编造模板模仿 AI 回答”、“明明无数据产出却捏造数据展示”、“明明该由 SDK 输出却绕圈私算算错”、“用空的 catch 吞掉真实异常静默兜底”的虚假伪自愈代码，一旦无法获取真实数据必须立即报错抛出；3) **扁平化服务端静态白名单安全红线**：审查 `server.js` 静态路由与兜底路由——严禁将项目根目录全量作为公开静态目录，根级公开文件（`index.html`、`portal.js`、`tiamo-guard.js` 等）必须走精确文件名白名单映射，确保请求 `/server.js`、`/config.js`、`/package.json`、`/data/settings.json` 或 `../` 路径穿越时严格返回 `404` 拒绝访问；4) **`.DS_Store` 与版本库卫生**：确认 `.gitignore` 包含 `.DS_Store`、`node_modules/`、`data/*`（排除 `!data/*.example.json`），并清理所有已被 Git 误追踪的残留项。</div></details>
+        </td>
+        <td class="col-score"><span class="score-pill score-med">4/10</span></td>
+        <td class="col-status"><span class="status-badge st-passed"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>已通过</span></td>
+        <td class="col-time"><span class="time-stamp">2026-11-21 22:42:28 (HEAD: 7daeb2e)</span></td>
+        <td class="col-summary">
+          <div class="qa-rounds"><div class="qa-round-card">
+            <div style="font-weight:700;font-size:0.75rem;color:#059669;">[第 1 轮 · security-auditor · PASS]</div>
+            <div style="color:#1e293b;white-space:pre-wrap;margin-top:2px;">零明文密码与敏感Key硬编码，.DS_Store严格排除且未追踪，无静默吞异常，遵守Fail Fast</div>
+            
+            
+          </div></div>
+        </td>
+      </tr>
+    
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="footer">
+      Generated by Tiamo Compliance Engine · Zero-Dependency Native Architecture · 2026-11-21
+    </footer>
+  </div>
+  <script>
+    async function archiveStandaloneReport() {
+      const btn = document.getElementById('archiveReportBtn');
+      const txt = document.getElementById('archiveReportBtnText');
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        if (btn) btn.disabled = true;
+        if (txt) txt.textContent = '归档中...';
+        try {
+          const res = await fetch('/api/archive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}'
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data && data.success) {
+            if (txt) txt.textContent = '已归档';
+            showReportToast('已归档至 ' + (data.relativePath || 'tools/self-check-report-archive.md') + ' (' + (data.archivedAt || '') + ')，同时已清空 tools/TASK.md');
+            return;
+          }
+          if (data && data.error) {
+            showReportToast('归档失败: ' + data.error);
+            if (txt) txt.textContent = '归档';
+            return;
+          }
+        } catch (err) {
+          console.error('[self-check-report] /api/archive 请求失败:', err);
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+        if (txt) txt.textContent = '归档';
+      }
+      showReportToast('离线单文件 HTML 报告无法直接写入本地项目文件系统。请在本地看板点击「归档」或执行 CLI 命令归档。');
+    }
+
+    function showReportToast(msg) {
+      let t = document.getElementById('reportToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'reportToast';
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#ffffff;padding:10px 20px;border-radius:8px;font-size:0.88rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;transition:all 0.3s ease;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.display = 'block';
+      t.style.opacity = '1';
+      clearTimeout(window.__reportToastTimer);
+      window.__reportToastTimer = setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => { if (t) t.style.display = 'none'; }, 300);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>

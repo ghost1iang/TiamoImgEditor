@@ -12,7 +12,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({ core }) => {
   if (!showConfirmModal) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white shadow-xl max-w-xs w-full p-5 border border-slate-100 rounded-2xl animate-in zoom-in-95">
         <div className="flex justify-between items-start mb-3 text-slate-900">
           <div className="w-10 h-10 bg-amber-50 flex items-center justify-center text-amber-500 shadow-inner rounded-xl">

@@ -2,3 +2,7 @@
 node_modules
 dist
 .env
+data/
+uploads/
+tools/self-check-state.json
+

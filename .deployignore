@@ -37,3 +37,9 @@ temp/
 # 6. 项目级测试与开发历史素材
 docs/legacy/
 
+# 7. 研发治理过程档案 (留档于 Git，不随生产包下发；注意 tools/self-check-report.html 必须随包上传严禁忽略)
+tools/self-check-report.md
+tools/self-check-state.json
+tools/TASK.md
+
+
